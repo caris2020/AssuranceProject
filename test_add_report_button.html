@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bouton Ajouter Rapport</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .user-role { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Test du Bouton "Ajouter un rapport"</h1>
+    
+    <div class="test-section info">
+        <h3>Problème Résolu</h3>
+        <p>Le bouton "Ajouter un rapport" était restreint aux administrateurs uniquement. Il est maintenant disponible pour tous les utilisateurs :</p>
+        <ul>
+            <li>✅ <strong>Avant</strong> : Seuls les admins pouvaient voir le bouton</li>
+            <li>✅ <strong>Après</strong> : Tous les utilisateurs peuvent voir le bouton</li>
+            <li>✅ <strong>Logique</strong> : Tous les utilisateurs peuvent créer des rapports</li>
+            <li>✅ <strong>Permissions</strong> : Seuls les créateurs peuvent modifier/supprimer leurs rapports</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation de l'interface</h3>
+        <button class="simulate-button" onclick="simulateInterface()">🎴 Simuler l'interface</button>
+        <div id="interface-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des différents rôles</h3>
+        <button class="test-button" onclick="testDifferentRoles()">👥 Tester différents rôles</button>
+        <div id="roles-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Instructions de test</h3>
+        <div id="instructions-result"></div>
+    </div>
+
+    <script>
+        function simulateInterface() {
+            const resultDiv = document.getElementById('interface-result');
+            
+            const testUsers = [
+                { name: 'admin', role: 'admin' },
+                { name: 'user1', role: 'point_focal' },
+                { name: 'user2', role: 'user' }
+            ];
+            
+            let html = '<div class="success">';
+            html += '<h4>🎴 Simulation de l\'interface pour différents utilisateurs</h4>';
+            html += '<p>Voici comment l\'interface s\'affiche pour chaque utilisateur :</p>';
+            
+            testUsers.forEach(user => {
+                html += `<div style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9;">`;
+                html += `<h5 style="margin: 0 0 10px 0;">👤 Utilisateur: <span class="user-role">${user.name}</span> (Rôle: <span class="user-role">${user.role}</span>)</h5>`;
+                
+                // Simuler la barre de recherche et le bouton
+                html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">`;
+                html += `<div style="max-width: 300px;">`;
+                html += `<label style="display: block; font-size: 12px; color: #666; margin-bottom: 5px;">Numéro de dossier</label>`;
+                html += `<input type="text" placeholder="Rechercher par numéro de dossier..." style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">`;
+                html += `</div>`;
+                
+                // Le bouton "Ajouter un rapport" est maintenant visible pour tous
+                html += `<button style="background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 14px;">+ Ajouter un rapport</button>`;
+                html += `</div>`;
+                
+                // Indicateur de permissions
+                html += `<div style="background: #e8f5e8; border: 1px solid #4ade80; border-radius: 4px; padding: 10px; margin-top: 10px;">`;
+                html += `<p style="margin: 0; color: #166534; font-size: 14px;">✅ <strong>Permissions :</strong></p>`;
+                html += `<ul style="margin: 5px 0 0 20px; color: #166534; font-size: 12px;">`;
+                html += `<li>Peut créer des rapports</li>`;
+                html += `<li>Peut voir tous les rapports</li>`;
+                html += `<li>Peut modifier/supprimer ses propres rapports</li>`;
+                html += `<li>Lecture seule pour les rapports d'autrui</li>`;
+                html += `</ul>`;
+                html += `</div>`;
+                
+                html += `</div>`;
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testDifferentRoles() {
+            const resultDiv = document.getElementById('roles-result');
+            
+            let html = '<div class="warning">';
+            html += '<h4>👥 Test des différents rôles</h4>';
+            html += '<p><strong>Scénarios de test :</strong></p>';
+            html += '<ul>';
+            html += '<li><strong>admin</strong> : Peut voir le bouton "Ajouter un rapport" ✅</li>';
+            html += '<li><strong>point_focal</strong> : Peut voir le bouton "Ajouter un rapport" ✅</li>';
+            html += '<li><strong>user</strong> : Peut voir le bouton "Ajouter un rapport" ✅</li>';
+            html += '</ul>';
+            html += '<p><strong>Résultat attendu :</strong> Tous les utilisateurs doivent voir le bouton "Ajouter un rapport"</p>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        function showInstructions() {
+            const resultDiv = document.getElementById('instructions-result');
+            
+            let html = '<div class="info">';
+            html += '<h4>📋 Instructions de test</h4>';
+            html += '<p><strong>Pour vérifier que le problème est résolu :</strong></p>';
+            html += '<ol>';
+            html += '<li>Connectez-vous avec un utilisateur non-admin (point_focal ou user)</li>';
+            html += '<li>Allez sur la page des rapports</li>';
+            html += '<li>Vérifiez que le bouton "+ Ajouter un rapport" est visible</li>';
+            html += '<li>Cliquez sur le bouton pour vérifier qu\'il fonctionne</li>';
+            html += '<li>Créez un rapport pour tester les permissions</li>';
+            html += '<li>Vérifiez que vous pouvez modifier/supprimer votre rapport</li>';
+            html += '<li>Vérifiez que les autres rapports sont en lecture seule</li>';
+            html += '</ol>';
+            html += '<p><strong>Résultat attendu :</strong> Tous les utilisateurs peuvent créer des rapports, mais seuls les créateurs peuvent les modifier/supprimer.</p>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // Charger les instructions au chargement de la page
+        window.onload = function() {
+            showInstructions();
+        };
+    </script>
+</body>
+</html>

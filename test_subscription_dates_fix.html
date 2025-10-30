@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Correction des dates d'expiration d'abonnement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .user-table th, .user-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .user-table th {
+            background-color: #f2f2f2;
+        }
+        .expired {
+            color: red;
+            font-weight: bold;
+        }
+        .expiring-soon {
+            color: orange;
+            font-weight: bold;
+        }
+        .active {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test - Correction des dates d'expiration d'abonnement</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Description du problème</h3>
+            <p>Le problème était que les dates d'expiration d'abonnement dans le tableau de bord administrateur affichaient des dates futures incorrectes (2026, 2027) au lieu des vraies dates d'expiration.</p>
+            <p><strong>Cause :</strong> Dans le backend, les méthodes <code>isSubscriptionExpired()</code> et <code>getDaysUntilExpiration()</code> utilisaient une date fixe <code>LocalDate.of(2025, 8, 27)</code> au lieu de la date actuelle réelle.</p>
+            <p><strong>Solution :</strong> Remplacement de la date fixe par <code>LocalDate.now()</code> pour utiliser la date actuelle réelle.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Tests à effectuer</h3>
+            <button onclick="testCurrentDate()">1. Vérifier la date actuelle du système</button>
+            <button onclick="testUserSubscriptions()">2. Tester les abonnements utilisateurs</button>
+            <button onclick="testAdminSubscription()">3. Tester l'abonnement administrateur</button>
+            <button onclick="testExpiredSubscriptions()">4. Tester les abonnements expirés</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="test-section">
+            <h3>📊 Résultats des tests</h3>
+            <div id="userResults"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        function displayResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        async function testCurrentDate() {
+            try {
+                displayResult('🔍 Test de la date actuelle du système...', 'info');
+                
+                const now = new Date();
+                const currentDate = now.toLocaleDateString('fr-FR');
+                const currentTime = now.toLocaleTimeString('fr-FR');
+                
+                displayResult(`✅ Date actuelle : ${currentDate} à ${currentTime}`, 'success');
+                
+                // Vérifier que la date n'est pas dans le futur
+                const currentYear = now.getFullYear();
+                if (currentYear > 2025) {
+                    displayResult(`⚠️ Attention : L'année actuelle (${currentYear}) est dans le futur par rapport à 2025`, 'error');
+                } else {
+                    displayResult(`✅ L'année actuelle (${currentYear}) est cohérente`, 'success');
+                }
+                
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test de la date : ${error.message}`, 'error');
+            }
+        }
+
+        async function testUserSubscriptions() {
+            try {
+                displayResult('🔍 Test des abonnements utilisateurs...', 'info');
+                
+                const response = await fetch(`${API_BASE}/users`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const users = await response.json();
+                displayResult(`✅ ${users.length} utilisateurs récupérés`, 'success');
+                
+                const userResultsDiv = document.getElementById('userResults');
+                userResultsDiv.innerHTML = `
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Compagnie</th>
+                                <th>Rôle</th>
+                                <th>Date de fin d'abonnement</th>
+                                <th>Jours restants</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(user => {
+                                const endDate = user.subscriptionEndDate ? new Date(user.subscriptionEndDate) : null;
+                                const daysLeft = user.daysUntilExpiration;
+                                let statusClass = 'active';
+                                let statusText = 'Actif';
+                                
+                                if (user.role === 'ADMIN') {
+                                    statusClass = 'active';
+                                    statusText = 'Administrateur (permanent)';
+                                } else if (daysLeft <= 0) {
+                                    statusClass = 'expired';
+                                    statusText = 'Expiré';
+                                } else if (daysLeft <= 30) {
+                                    statusClass = 'expiring-soon';
+                                    statusText = 'Expiration proche';
+                                }
+                                
+                                return `
+                                    <tr>
+                                        <td>${user.firstName} ${user.lastName}</td>
+                                        <td>${user.insuranceCompany}</td>
+                                        <td>${user.role}</td>
+                                        <td>${endDate ? endDate.toLocaleDateString('fr-FR') : 'Non défini'}</td>
+                                        <td>${user.role === 'ADMIN' ? '∞' : daysLeft}</td>
+                                        <td class="${statusClass}">${statusText}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                // Vérifier les incohérences
+                const issues = [];
+                users.forEach(user => {
+                    if (user.role !== 'ADMIN' && user.subscriptionEndDate) {
+                        const endDate = new Date(user.subscriptionEndDate);
+                        const now = new Date();
+                        
+                        // Vérifier si la date de fin est dans le futur lointain (plus de 2 ans)
+                        const twoYearsFromNow = new Date();
+                        twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+                        
+                        if (endDate > twoYearsFromNow) {
+                            issues.push(`${user.firstName} ${user.lastName} : Date de fin dans le futur lointain (${endDate.toLocaleDateString('fr-FR')})`);
+                        }
+                        
+                        // Vérifier la cohérence entre la date de fin et les jours restants
+                        const expectedDaysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+                        if (Math.abs(expectedDaysLeft - user.daysUntilExpiration) > 1) {
+                            issues.push(`${user.firstName} ${user.lastName} : Incohérence entre date de fin et jours restants (attendu: ${expectedDaysLeft}, obtenu: ${user.daysUntilExpiration})`);
+                        }
+                    }
+                });
+                
+                if (issues.length > 0) {
+                    displayResult(`⚠️ Problèmes détectés :<br>${issues.map(issue => `• ${issue}`).join('<br>')}`, 'error');
+                } else {
+                    displayResult('✅ Aucune incohérence détectée dans les dates d\'abonnement', 'success');
+                }
+                
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test des abonnements : ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminSubscription() {
+            try {
+                displayResult('🔍 Test de l\'abonnement administrateur...', 'info');
+                
+                const response = await fetch(`${API_BASE}/users`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const users = await response.json();
+                const adminUser = users.find(user => user.role === 'ADMIN');
+                
+                if (adminUser) {
+                    if (adminUser.daysUntilExpiration === Number.MAX_SAFE_INTEGER || adminUser.daysUntilExpiration > 1000000) {
+                        displayResult('✅ L\'administrateur a un abonnement permanent (jours restants infinis)', 'success');
+                    } else {
+                        displayResult(`⚠️ L'administrateur a un nombre de jours restants limité : ${adminUser.daysUntilExpiration}`, 'error');
+                    }
+                    
+                    if (!adminUser.subscriptionEndDate) {
+                        displayResult('✅ L\'administrateur n\'a pas de date de fin d\'abonnement', 'success');
+                    } else {
+                        displayResult(`⚠️ L'administrateur a une date de fin d'abonnement : ${adminUser.subscriptionEndDate}`, 'error');
+                    }
+                } else {
+                    displayResult('⚠️ Aucun utilisateur administrateur trouvé', 'error');
+                }
+                
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test de l'abonnement administrateur : ${error.message}`, 'error');
+            }
+        }
+
+        async function testExpiredSubscriptions() {
+            try {
+                displayResult('🔍 Test des abonnements expirés...', 'info');
+                
+                const response = await fetch(`${API_BASE}/users`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const users = await response.json();
+                const expiredUsers = users.filter(user => 
+                    user.role !== 'ADMIN' && 
+                    user.daysUntilExpiration <= 0
+                );
+                
+                if (expiredUsers.length > 0) {
+                    displayResult(`✅ ${expiredUsers.length} utilisateur(s) avec abonnement expiré :`, 'success');
+                    expiredUsers.forEach(user => {
+                        displayResult(`• ${user.firstName} ${user.lastName} (${user.insuranceCompany}) - ${user.daysUntilExpiration} jours restants`, 'info');
+                    });
+                } else {
+                    displayResult('ℹ️ Aucun utilisateur avec abonnement expiré', 'info');
+                }
+                
+                // Vérifier les utilisateurs avec expiration proche (moins de 30 jours)
+                const expiringSoonUsers = users.filter(user => 
+                    user.role !== 'ADMIN' && 
+                    user.daysUntilExpiration > 0 && 
+                    user.daysUntilExpiration <= 30
+                );
+                
+                if (expiringSoonUsers.length > 0) {
+                    displayResult(`⚠️ ${expiringSoonUsers.length} utilisateur(s) avec expiration proche :`, 'error');
+                    expiringSoonUsers.forEach(user => {
+                        displayResult(`• ${user.firstName} ${user.lastName} (${user.insuranceCompany}) - ${user.daysUntilExpiration} jours restants`, 'info');
+                    });
+                }
+                
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test des abonnements expirés : ${error.message}`, 'error');
+            }
+        }
+
+        // Test automatique au chargement de la page
+        window.onload = function() {
+            displayResult('🚀 Démarrage des tests automatiques...', 'info');
+            setTimeout(() => testCurrentDate(), 1000);
+            setTimeout(() => testUserSubscriptions(), 2000);
+            setTimeout(() => testAdminSubscription(), 3000);
+            setTimeout(() => testExpiredSubscriptions(), 4000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Permissions Restreintes Rapports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .report-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .permission { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        .read-only { background: #f3f4f6; border: 1px solid #d1d5db; padding: 8px; border-radius: 4px; text-align: center; font-size: 12px; color: #6b7280; margin-top: 10px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+        .owner-badge { background: #059669; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; }
+        .non-owner-badge { background: #6b7280; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Test des Permissions Restreintes des Rapports</h1>
+    
+    <div class="test-section info">
+        <h3>Nouvelles Règles de Permissions</h3>
+        <p>Les permissions ont été modifiées pour être plus restrictives :</p>
+        <ul>
+            <li>🔒 <strong>Seuls les créateurs</strong> peuvent modifier et supprimer leurs rapports</li>
+            <li>👁️ <strong>Les autres utilisateurs</strong> ont uniquement les droits en lecture</li>
+            <li>⚠️ <strong>Pas de permissions globales</strong> - même les admins sont limités</li>
+            <li>📝 <strong>Indicateur visuel</strong> pour les utilisateurs en lecture seule</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des permissions backend</h3>
+        <button class="test-button" onclick="testBackendPermissions()">🔐 Tester les permissions backend</button>
+        <div id="backend-permissions-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des cartes avec permissions restreintes</h3>
+        <button class="simulate-button" onclick="simulateRestrictedCards()">🎴 Simuler les cartes restreintes</button>
+        <div id="restricted-cards-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test de différents utilisateurs</h3>
+        <button class="test-button" onclick="testDifferentUsers()">👥 Tester différents utilisateurs</button>
+        <div id="users-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        async function testBackendPermissions() {
+            const resultDiv = document.getElementById('backend-permissions-result');
+            resultDiv.innerHTML = '<p>Test en cours...</p>';
+            
+            try {
+                // Récupérer les rapports
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                if (reports.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Aucun rapport trouvé</h4>
+                            <p>Aucun rapport n'est disponible pour tester les permissions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="success">';
+                html += '<h4>🔐 Test des permissions backend</h4>';
+                html += '<p>Vérification que seuls les créateurs ont les permissions :</p>';
+                
+                const testUsers = ['admin', 'user1', 'user2', 'unknown_user'];
+                
+                for (const report of reports.slice(0, 2)) {
+                    html += `<div class="report-card">`;
+                    html += `<h4>📄 ${report.title}</h4>`;
+                    html += `<p><strong>Propriétaire:</strong> <span class="owner-badge">${report.createdBy || 'Non défini'}</span></p>`;
+                    html += `<p><strong>ID:</strong> ${report.id}</p>`;
+                    
+                    for (const user of testUsers) {
+                        try {
+                            const permissionsResponse = await fetch(`${API_BASE}/api/reports/${report.id}/permissions?userName=${user}`);
+                            const permissions = await permissionsResponse.json();
+                            
+                            const isOwner = report.createdBy === user;
+                            const expectedEdit = isOwner;
+                            const expectedDelete = isOwner;
+                            
+                            const editCorrect = permissions.canEdit === expectedEdit;
+                            const deleteCorrect = permissions.canDelete === expectedDelete;
+                            
+                            html += `<div style="margin: 10px 0; padding: 8px; border-left: 3px solid ${editCorrect && deleteCorrect ? '#10b981' : '#ef4444'}; background: ${editCorrect && deleteCorrect ? '#f0fdf4' : '#fef2f2'};">`;
+                            html += `<p><strong>Utilisateur:</strong> <span class="${isOwner ? 'owner-badge' : 'non-owner-badge'}">${user}</span></p>`;
+                            html += `<p><strong>Peut modifier:</strong> <span class="permission">${permissions.canEdit ? '✅ Oui' : '❌ Non'}</span> ${editCorrect ? '✅' : '❌'}</p>`;
+                            html += `<p><strong>Peut supprimer:</strong> <span class="permission">${permissions.canDelete ? '✅ Oui' : '❌ Non'}</span> ${deleteCorrect ? '✅' : '❌'}</p>`;
+                            html += `</div>`;
+                        } catch (error) {
+                            html += `<div class="error">`;
+                            html += `<p><strong>Erreur pour l'utilisateur ${user}:</strong> ${error.message}</p>`;
+                            html += `</div>`;
+                        }
+                    }
+                    
+                    html += `</div>`;
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erreur lors du test</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function simulateRestrictedCards() {
+            const resultDiv = document.getElementById('restricted-cards-result');
+            
+            // Simuler des données de rapport
+            const mockReports = [
+                {
+                    id: 1,
+                    title: "Rapport d'enquête - Dossier Z60TFMIXUS",
+                    status: "Disponible",
+                    createdBy: "admin",
+                    caseCode: "Z60TFMIXUS",
+                    beneficiary: "Jean Dupont",
+                    initiator: "Marie Martin",
+                    createdAt: "15/12/2024"
+                },
+                {
+                    id: 2,
+                    title: "Analyse frauduleuse - Dossier SCORE001",
+                    status: "En attente",
+                    createdBy: "user1",
+                    caseCode: "SCORE001",
+                    beneficiary: "Pierre Durand",
+                    initiator: "Sophie Bernard",
+                    createdAt: "14/12/2024"
+                }
+            ];
+            
+            const testUsers = ['admin', 'user1', 'user2'];
+            
+            let html = '<div class="success">';
+            html += '<h4>🎴 Simulation des cartes avec permissions restreintes</h4>';
+            html += '<p>Voici comment les cartes s\'affichent pour différents utilisateurs :</p>';
+            
+            testUsers.forEach(user => {
+                html += `<h5 style="margin-top: 20px; padding: 10px; background: #e5e7eb; border-radius: 5px;">👤 Utilisateur: ${user}</h5>`;
+                
+                mockReports.forEach(report => {
+                    const isOwner = report.createdBy === user;
+                    const canEdit = isOwner;
+                    const canDelete = isOwner;
+                    
+                    html += `<div class="report-card">`;
+                    html += `<h4>${report.title}</h4>`;
+                    html += `<p><strong>Statut:</strong> ${report.status}</p>`;
+                    html += `<p><strong>Créé par:</strong> <span class="${isOwner ? 'owner-badge' : 'non-owner-badge'}">${report.createdBy}</span></p>`;
+                    html += `<p><strong>Dossier:</strong> ${report.caseCode}</p>`;
+                    html += `<p><strong>Bénéficiaire:</strong> ${report.beneficiary}</p>`;
+                    html += `<p><strong>Initiateur:</strong> ${report.initiator}</p>`;
+                    html += `<p><strong>Date:</strong> ${report.createdAt}</p>`;
+                    
+                    // Boutons d'action
+                    html += `<div style="margin-top: 10px;">`;
+                    html += `<button style="background: #3b82f6; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Prévisualiser</button>`;
+                    html += `<button style="background: #10b981; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Télécharger</button>`;
+                    
+                    if (canEdit) {
+                        html += `<button style="background: #f59e0b; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Modifier</button>`;
+                    }
+                    if (canDelete) {
+                        html += `<button style="background: #ef4444; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Supprimer</button>`;
+                    }
+                    
+                    html += `</div>`;
+                    
+                    // Indicateur de permissions
+                    if (isOwner) {
+                        html += `<p style="color: #059669; font-size: 12px; margin-top: 5px;">👑 Vous êtes le propriétaire - Accès complet</p>`;
+                    } else {
+                        html += `<div class="read-only">👁️ Lecture seule - Vous n'êtes pas le propriétaire de ce rapport</div>`;
+                    }
+                    
+                    html += `</div>`;
+                });
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testDifferentUsers() {
+            const resultDiv = document.getElementById('users-result');
+            
+            let html = '<div class="warning">';
+            html += '<h4>👥 Test des différents utilisateurs</h4>';
+            html += '<p><strong>Scénarios de test :</strong></p>';
+            html += '<ul>';
+            html += '<li><strong>admin</strong> : Peut modifier/supprimer ses propres rapports, lecture seule pour les autres</li>';
+            html += '<li><strong>user1</strong> : Peut modifier/supprimer ses propres rapports, lecture seule pour les autres</li>';
+            html += '<li><strong>user2</strong> : Lecture seule pour tous les rapports (n\'a créé aucun rapport)</li>';
+            html += '<li><strong>unknown_user</strong> : Lecture seule pour tous les rapports</li>';
+            html += '</ul>';
+            html += '<p><strong>Pour tester :</strong></p>';
+            html += '<ol>';
+            html += '<li>Connectez-vous avec différents utilisateurs dans l\'application</li>';
+            html += '<li>Allez sur la page des rapports</li>';
+            html += '<li>Vérifiez que seuls vos propres rapports ont les boutons "Modifier" et "Supprimer"</li>';
+            html += '<li>Vérifiez que les autres rapports affichent "Lecture seule"</li>';
+            html += '</ol>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // Charger les tests au chargement de la page
+        window.onload = function() {
+            testBackendPermissions();
+        };
+    </script>
+</body>
+</html>

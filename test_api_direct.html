@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Direct</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Test API Direct</h1>
+    <button onclick="testAPI()">Tester l'API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                // Test avec différents utilisateurs
+                const users = [
+                    { username: 'octavio', password: 'password123', company: 'Test Company' },
+                    { username: 'admin', password: 'password123', company: 'Test Company' },
+                    { username: 'JACQUES', password: 'password123', company: 'Test Company' },
+                    { username: 'noumano', password: 'password123', company: 'Test Company' }
+                ];
+
+                let html = '<div class="info"><h3>Test de connexion avec différents utilisateurs</h3></div>';
+
+                for (const user of users) {
+                    try {
+                        const response = await fetch('http://localhost:8080/api/auth/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                username: user.username,
+                                insuranceCompany: user.company,
+                                password: user.password
+                            })
+                        });
+
+                        if (response.ok) {
+                            const userData = await response.json();
+                            
+                            const startDate = new Date(userData.subscriptionStartDate);
+                            const endDate = new Date(userData.subscriptionEndDate);
+                            const now = new Date();
+                            const daysUntilExpiration = userData.daysUntilExpiration;
+
+                            // Calcul de la logique attendue
+                            let expectedDays, expectedStatus;
+                            
+                            if (now < startDate) {
+                                expectedDays = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                                expectedStatus = 'future';
+                            } else if (now > endDate) {
+                                expectedDays = 0;
+                                expectedStatus = 'expired';
+                            } else {
+                                expectedDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                                expectedStatus = 'active';
+                            }
+
+                            const isCorrect = daysUntilExpiration === expectedDays;
+
+                            html += `
+                                <div class="result ${isCorrect ? 'success' : 'error'}">
+                                    <h4>Utilisateur: ${user.username}</h4>
+                                    <p><strong>Connexion:</strong> ✅ Réussie</p>
+                                    <p><strong>Date de début:</strong> ${startDate.toLocaleDateString('fr-FR')}</p>
+                                    <p><strong>Date de fin:</strong> ${endDate.toLocaleDateString('fr-FR')}</p>
+                                    <p><strong>Jours restants (API):</strong> ${daysUntilExpiration}</p>
+                                    <p><strong>Jours attendus:</strong> ${expectedDays}</p>
+                                    <p><strong>Statut attendu:</strong> ${expectedStatus}</p>
+                                    <p><strong>Résultat:</strong> ${isCorrect ? '✅ CORRECT' : '❌ INCORRECT'}</p>
+                                </div>
+                            `;
+                        } else {
+                            const errorText = await response.text();
+                            html += `
+                                <div class="result error">
+                                    <h4>Utilisateur: ${user.username}</h4>
+                                    <p><strong>Connexion:</strong> ❌ Échec (${response.status})</p>
+                                    <p><strong>Erreur:</strong> ${errorText}</p>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        html += `
+                            <div class="result error">
+                                <h4>Utilisateur: ${user.username}</h4>
+                                <p><strong>Erreur:</strong> ${error.message}</p>
+                            </div>
+                        `;
+                    }
+                }
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>Erreur</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

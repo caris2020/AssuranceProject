@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Correction Immédiate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .user-info {
+            background-color: #e9ecef;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .user-info.fixed {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .user-info.problem {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Correction Immédiate</h1>
+        <p><strong>Problème :</strong> Les utilisateurs ont des dates futures (28/08/2026) mais affichent "Expire aujourd'hui".</p>
+        
+        <div>
+            <button class="button" onclick="testCorrection()">🧪 Tester la Correction</button>
+            <button class="button" onclick="forcerCorrection()">🔧 Forcer la Correction</button>
+            <button class="button" onclick="verifierResultat()">✅ Vérifier le Résultat</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        async function testCorrection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result warning">🧪 Test de la correction en cours...</div>';
+            
+            try {
+                // Récupérer les utilisateurs
+                const response = await fetch(`${API_BASE}/users`);
+                const users = await response.json();
+                
+                let html = '<div class="result"><h3>📊 Test des Utilisateurs</h3>';
+                
+                let problemCount = 0;
+                let totalUsers = 0;
+                
+                for (const user of users) {
+                    if (user.role !== 'ADMIN' && user.subscriptionEndDate) {
+                        totalUsers++;
+                        
+                        // Calculer manuellement les jours restants
+                        const endDate = new Date(user.subscriptionEndDate);
+                        const today = new Date();
+                        const timeDiff = endDate.getTime() - today.getTime();
+                        const manualDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                        
+                        // Vérifier si il y a un problème
+                        const hasProblem = user.daysUntilExpiration === 0 && manualDays > 0;
+                        if (hasProblem) problemCount++;
+                        
+                        html += `<div class="user-info ${hasProblem ? 'problem' : 'fixed'}">
+                            <strong>${user.username}</strong>
+                            <p>📅 Date d'expiration: ${user.subscriptionEndDate}</p>
+                            <p>🔢 Jours calculés par le système: ${user.daysUntilExpiration}</p>
+                            <p>🔢 Jours calculés manuellement: ${manualDays}</p>
+                            <p>📊 Statut: ${user.subscriptionStatus}</p>
+                            <p>${hasProblem ? '⚠️ PROBLÈME DÉTECTÉ' : '✅ OK'}</p>
+                        </div>`;
+                    }
+                }
+                
+                html += `<hr><p><strong>Résumé :</strong></p>`;
+                html += `<p>📊 Utilisateurs testés: ${totalUsers}</p>`;
+                html += `<p>❌ Problèmes détectés: ${problemCount}</p>`;
+                html += `<p>✅ Utilisateurs corrects: ${totalUsers - problemCount}</p>`;
+                
+                if (problemCount > 0) {
+                    html += `<p><strong>🎯 Action requise :</strong> Cliquez sur "Forcer la Correction"</p>`;
+                } else {
+                    html += `<p><strong>🎉 Tous les utilisateurs sont corrects !</strong></p>`;
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+                    ❌ <strong>Erreur de test</strong>
+                    <p>${error.message}</p>
+                    <p>Assurez-vous que le backend est démarré sur http://localhost:8080</p>
+                </div>`;
+            }
+        }
+        
+        async function forcerCorrection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result warning">🔧 Correction forcée en cours...</div>';
+            
+            try {
+                // Utiliser l'endpoint de correction
+                const response = await fetch(`${API_BASE}/subscriptions/fix-dates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="result success">
+                        🎉 <strong>CORRECTION FORCÉE RÉUSSIE !</strong>
+                        <p>✅ ${data.message}</p>
+                        <p>📊 Utilisateurs corrigés: ${data.correctedCount}</p>
+                        <p>📅 Date système: ${data.currentDate}</p>
+                        <hr>
+                        <p><strong>🎯 Maintenant :</strong></p>
+                        <p>1️⃣ Cliquez sur "Vérifier le Résultat"</p>
+                        <p>2️⃣ Actualisez la page du tableau de bord</p>
+                        <p>3️⃣ Vérifiez que les dates futures affichent le bon nombre de jours</p>
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+                        ❌ <strong>Erreur de correction</strong>
+                        <p>${data.message}</p>
+                    </div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+                    ❌ <strong>Erreur de connexion</strong>
+                    <p>Assurez-vous que le backend est démarré sur http://localhost:8080</p>
+                    <p>Erreur: ${error.message}</p>
+                </div>`;
+            }
+        }
+        
+        async function verifierResultat() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result warning">✅ Vérification du résultat...</div>';
+            
+            try {
+                // Récupérer les utilisateurs après correction
+                const response = await fetch(`${API_BASE}/users`);
+                const users = await response.json();
+                
+                let html = '<div class="result success"><h3>✅ Vérification Post-Correction</h3>';
+                
+                let allCorrect = true;
+                
+                for (const user of users) {
+                    if (user.role !== 'ADMIN' && user.subscriptionEndDate) {
+                        // Calculer manuellement les jours restants
+                        const endDate = new Date(user.subscriptionEndDate);
+                        const today = new Date();
+                        const timeDiff = endDate.getTime() - today.getTime();
+                        const manualDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                        
+                        // Vérifier si il y a encore un problème
+                        const hasProblem = user.daysUntilExpiration === 0 && manualDays > 0;
+                        if (hasProblem) allCorrect = false;
+                        
+                        html += `<div class="user-info ${hasProblem ? 'problem' : 'fixed'}">
+                            <strong>${user.username}</strong>
+                            <p>📅 Date d'expiration: ${user.subscriptionEndDate}</p>
+                            <p>🔢 Jours calculés par le système: ${user.daysUntilExpiration}</p>
+                            <p>🔢 Jours calculés manuellement: ${manualDays}</p>
+                            <p>📊 Statut: ${user.subscriptionStatus}</p>
+                            <p>${hasProblem ? '⚠️ PROBLÈME PERSISTANT' : '✅ CORRIGÉ'}</p>
+                        </div>`;
+                    }
+                }
+                
+                if (allCorrect) {
+                    html += `<hr><p><strong>🎉 SUCCÈS !</strong> Tous les utilisateurs sont maintenant corrects.</p>`;
+                    html += `<p>Vous pouvez maintenant utiliser le tableau de bord normalement.</p>`;
+                } else {
+                    html += `<hr><p><strong>⚠️ ATTENTION :</strong> Certains problèmes persistent.</p>`;
+                    html += `<p>Relancez la correction forcée.</p>`;
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+                    ❌ <strong>Erreur de vérification</strong>
+                    <p>${error.message}</p>
+                </div>`;
+            }
+        }
+        
+        // Test automatique au chargement
+        window.onload = function() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result warning">
+                🔧 <strong>Test Correction Immédiate</strong>
+                <p>Cet outil va tester et corriger le problème des dates d'expiration.</p>
+                <p><strong>Problème :</strong> Les utilisateurs ont des dates futures (2026) mais affichent "Expire aujourd'hui".</p>
+                <hr>
+                <p><strong>🎯 Étapes :</strong></p>
+                <p>1️⃣ Cliquez sur "Tester la Correction" pour diagnostiquer</p>
+                <p>2️⃣ Si des problèmes sont détectés, cliquez sur "Forcer la Correction"</p>
+                <p>3️⃣ Cliquez sur "Vérifier le Résultat" pour confirmer</p>
+            </div>`;
+        };
+    </script>
+</body>
+</html>

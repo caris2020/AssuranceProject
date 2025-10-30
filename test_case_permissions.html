@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Permissions Dossiers</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .case-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .owner-badge { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .action-button { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 2px; cursor: pointer; }
+        .delete-button { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 2px; cursor: pointer; }
+        .user-role { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Test Permissions Dossiers</h1>
+    
+    <div class="test-section info">
+        <h3>Problème Identifié</h3>
+        <p>Vous êtes propriétaire d'un dossier mais vous ne voyez plus les boutons CRUD. Voici les points à vérifier :</p>
+        <ul>
+            <li>✅ <strong>Permissions chargées</strong> : Les permissions sont bien récupérées depuis le backend</li>
+            <li>✅ <strong>Props passées</strong> : Les permissions sont bien passées au composant CaseCard</li>
+            <li>⚠️ <strong>Bouton Modifier</strong> : N'apparaît que dans la modal des détails, pas sur la carte principale</li>
+            <li>✅ <strong>Bouton Supprimer</strong> : Devrait apparaître sur la carte si canDelete = true</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des Permissions Backend</h3>
+        <button class="test-button" onclick="testBackendPermissions()">🔐 Tester les permissions backend</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des Cartes de Dossiers</h3>
+        <button class="simulate-button" onclick="simulateCaseCards()">🎴 Simuler les cartes de dossiers</button>
+        <div id="cards-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Instructions de Diagnostic</h3>
+        <div id="diagnostic-result"></div>
+    </div>
+
+    <script>
+        function testBackendPermissions() {
+            const resultDiv = document.getElementById('backend-result');
+            
+            let html = '<div class="warning">';
+            html += '<h4>🔐 Test des permissions backend</h4>';
+            html += '<p><strong>Pour diagnostiquer le problème :</strong></p>';
+            html += '<ol>';
+            html += '<li><strong>Ouvrez la console du navigateur</strong> (F12)</li>';
+            html += '<li><strong>Allez sur la page des dossiers</strong></li>';
+            html += '<li><strong>Vérifiez les logs</strong> pour voir les permissions chargées</li>';
+            html += '<li><strong>Cherchez les erreurs</strong> dans la console</li>';
+            html += '</ol>';
+            html += '<p><strong>Logs à rechercher :</strong></p>';
+            html += '<pre>Erreur lors du chargement des permissions pour le dossier X: ...</pre>';
+            html += '<pre>Permissions chargées: {canEdit: true, canDelete: true}</pre>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        function simulateCaseCards() {
+            const resultDiv = document.getElementById('cards-result');
+            
+            const currentUser = 'admin';
+            const testCases = [
+                {
+                    id: 1,
+                    reference: 'COBRV8LPS0',
+                    title: 'usurpation',
+                    createdAt: '22/08/2025',
+                    createdBy: 'admin',
+                    status: 'Sous enquête',
+                    canEdit: true,
+                    canDelete: true
+                },
+                {
+                    id: 2,
+                    reference: 'TEST001',
+                    title: 'fraude',
+                    createdAt: '21/08/2025',
+                    createdBy: 'user1',
+                    status: 'Frauduleux',
+                    canEdit: false,
+                    canDelete: false
+                }
+            ];
+            
+            let html = '<div class="success">';
+            html += '<h4>🎴 Simulation des cartes de dossiers</h4>';
+            html += '<p>Utilisateur actuel : <span class="user-role">' + currentUser + '</span></p>';
+            html += '<p>Voici comment les cartes s\'affichent :</p>';
+            
+            testCases.forEach(caseItem => {
+                const isOwner = caseItem.createdBy === currentUser;
+                
+                html += '<div class="case-card">';
+                html += '<h5 style="margin: 0 0 10px 0;">🔍 ' + caseItem.title + '</h5>';
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">Créé le ' + caseItem.createdAt + '</p>';
+                
+                // Affichage du propriétaire
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">';
+                html += 'Par: <span style="font-weight: bold;">' + caseItem.createdBy + '</span>';
+                if (isOwner) {
+                    html += ' <span class="owner-badge">👤 Votre dossier</span>';
+                }
+                html += '</p>';
+                
+                // Code du dossier
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">Code: <span style="font-family: monospace; color: #3b82f6;">' + caseItem.reference + '</span></p>';
+                
+                // Statut
+                html += '<div style="margin: 10px 0;">';
+                html += '<span style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 12px; font-size: 12px;">' + caseItem.status + '</span>';
+                html += '</div>';
+                
+                // Boutons d'actions
+                html += '<div style="margin: 10px 0;">';
+                html += '<button class="action-button">Voir le dossier</button>';
+                html += '<button class="action-button">📋 Voir rapport</button>';
+                html += '</div>';
+                
+                // Actions conditionnelles
+                if (caseItem.canDelete) {
+                    html += '<div style="margin: 10px 0;">';
+                    html += '<button class="delete-button">🗑️ Supprimer le dossier</button>';
+                    html += '</div>';
+                }
+                
+                // Note sur le bouton Modifier
+                html += '<div style="margin: 10px 0; padding: 8px; background: #fef3c7; border-radius: 4px; font-size: 12px;">';
+                html += '<strong>Note :</strong> Le bouton "Modifier" n\'apparaît que dans la modal des détails (après avoir cliqué sur "Voir le dossier")';
+                if (caseItem.canEdit) {
+                    html += ' ✅ Vous avez les permissions pour modifier';
+                } else {
+                    html += ' ❌ Vous n\'avez pas les permissions pour modifier';
+                }
+                html += '</div>';
+                
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function showDiagnostic() {
+            const resultDiv = document.getElementById('diagnostic-result');
+            
+            let html = '<div class="info">';
+            html += '<h4>🔍 Instructions de diagnostic</h4>';
+            html += '<p><strong>Pour résoudre le problème des boutons CRUD manquants :</strong></p>';
+            html += '<ol>';
+            html += '<li><strong>Vérifiez la console</strong> pour les erreurs de permissions</li>';
+            html += '<li><strong>Cliquez sur "Voir le dossier"</strong> pour ouvrir la modal</li>';
+            html += '<li><strong>Dans la modal</strong>, vérifiez s\'il y a un bouton "Modifier le dossier"</li>';
+            html += '<li><strong>Sur la carte principale</strong>, vérifiez s\'il y a un bouton "Supprimer le dossier"</li>';
+            html += '<li><strong>Si les boutons manquent</strong>, c\'est un problème de permissions backend</li>';
+            html += '</ol>';
+            html += '<p><strong>Solutions possibles :</strong></p>';
+            html += '<ul>';
+            html += '<li>Redémarrer le backend pour recharger les permissions</li>';
+            html += '<li>Vérifier que vous êtes bien connecté avec le bon utilisateur</li>';
+            html += '<li>Vérifier que le dossier a bien été créé par votre utilisateur</li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // Charger les instructions au chargement de la page
+        window.onload = function() {
+            showDiagnostic();
+        };
+    </script>
+</body>
+</html>

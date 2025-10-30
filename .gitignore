@@ -1,0 +1,52 @@
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+*.iml
+.idea/
+.vscode/
+*.swp
+
+# --- Node/React ---
+node_modules/
+**/node_modules/
+.dist/
+dist/
+build/
+**/build/
+.npm/
+.yarn/
+.pnpm-store/
+.bundle/
+coverage/
+.eslintcache
+.stylelintcache
+.cache/
+
+# --- Java / Spring Boot ---
+backend/target/
+**/target/
+*.class
+*.log
+*.tmp
+hs_err_pid*
+
+# --- Environment & secrets ---
+.env
+.env.*
+**/.env
+**/.env.*
+*.local
+
+# --- Docker ---
+**/.dockerignore
+**/docker-compose.override.yml
+
+# --- Tests / Reports ---
+reports/
+**/reports/
+*.lcov
+
+# --- Misc ---
+.tmp/
+.sass-cache/
+.nyc_output/

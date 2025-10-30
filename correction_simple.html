@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correction Simple - Résolution Immédiate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            background-color: #dc3545;
+            color: white;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 10px;
+            font-weight: bold;
+            width: 100%;
+        }
+        .button:hover {
+            background-color: #c82333;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correction Simple</h1>
+        <p><strong>Problème :</strong> Les utilisateurs ont des dates futures (2026) mais affichent "Expire aujourd'hui".</p>
+        
+        <button class="button" onclick="corriger()">🔧 CORRIGER MAINTENANT</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        async function corriger() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result warning">🔧 Correction en cours...</div>';
+            
+            try {
+                // Utiliser l'endpoint de correction
+                const response = await fetch(`${API_BASE}/subscriptions/fix-dates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="result success">
+🎉 <strong>CORRECTION RÉUSSIE !</strong>
+<p>✅ ${data.message}</p>
+<p>📊 Utilisateurs corrigés: ${data.correctedCount}</p>
+<p>📅 Date système: ${data.currentDate}</p>
+<hr>
+<p><strong>🎯 Maintenant :</strong></p>
+<p>1️⃣ Actualisez la page du tableau de bord</p>
+<p>2️⃣ Allez dans l'onglet "Utilisateurs"</p>
+<p>3️⃣ Vérifiez que les dates futures affichent "365 jours restants"</p>
+</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+❌ <strong>Erreur de correction</strong>
+<p>${data.message}</p>
+</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+❌ <strong>Erreur de connexion</strong>
+<p>Assurez-vous que le backend est démarré sur http://localhost:8080</p>
+<p>Erreur: ${error.message}</p>
+</div>`;
+            }
+        }
+        
+        // Vérification automatique au chargement
+        window.onload = function() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result warning">
+🔧 <strong>Correction Simple</strong>
+<p>Cliquez sur "CORRIGER MAINTENANT" pour résoudre le problème des dates d'expiration.</p>
+</div>`;
+        };
+    </script>
+</body>
+</html>

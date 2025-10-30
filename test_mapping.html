@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mapping CaseId</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .report-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .case-number { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test du Mapping des CaseId</h1>
+    
+    <div class="test-section info">
+        <h3>Instructions</h3>
+        <p>Ce test vérifie que le mapping des caseId fonctionne correctement entre le backend et le frontend.</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des données brutes du backend</h3>
+        <button onclick="testRawBackendData()">Vérifier les données brutes</button>
+        <div id="raw-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test du mapping frontend</h3>
+        <button onclick="testFrontendMapping()">Tester le mapping</button>
+        <div id="mapping-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des cartes avec caseId</h3>
+        <button onclick="simulateCardsWithCaseId()">Simuler les cartes</button>
+        <div id="cards-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        // Fonction de mapping comme dans le frontend
+        function mapBackend(r) {
+            return {
+                id: String(r.id),
+                title: r.title,
+                createdAt: new Date(r.createdAt).toLocaleDateString('fr-FR'),
+                status: r.status === 'DISPONIBLE' ? 'Disponible' : r.status === 'EN_ATTENTE' ? 'En attente' : 'Traité',
+                beneficiary: r.beneficiary,
+                initiator: r.initiator,
+                insured: r.insured,
+                subscriber: r.subscriber,
+                // Récupérer le caseId depuis le backend (peut être dans caseId, caseReference ou caseCode)
+                caseId: r.caseId || r.caseReference || r.caseCode,
+            }
+        }
+
+        async function testRawBackendData() {
+            const resultDiv = document.getElementById('raw-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                let html = '<div class="success">';
+                html += `<h4>✅ Données brutes du backend</h4>`;
+                html += `<p><strong>Nombre de rapports:</strong> ${reports.length}</p>`;
+                
+                reports.forEach((r, index) => {
+                    html += `<div class="report-card">`;
+                    html += `<h4>Rapport ${index + 1}: ${r.title}</h4>`;
+                    html += `<p><strong>ID:</strong> ${r.id}</p>`;
+                    html += `<p><strong>caseId:</strong> <span class="case-number">${r.caseId || 'NULL'}</span></p>`;
+                    html += `<p><strong>caseReference:</strong> <span class="case-number">${r.caseReference || 'NULL'}</span></p>`;
+                    html += `<p><strong>caseCode:</strong> <span class="case-number">${r.caseCode || 'NULL'}</span></p>`;
+                    html += `<p><strong>Bénéficiaire:</strong> ${r.beneficiary || 'Non défini'}</p>`;
+                    html += `<p><strong>Initiateur:</strong> ${r.initiator || 'Non défini'}</p>`;
+                    html += `<p><strong>Statut:</strong> ${r.status}</p>`;
+                    html += `</div>`;
+                });
+                
+                html += '<h5>Données JSON brutes:</h5>';
+                html += `<pre>${JSON.stringify(reports, null, 2)}</pre>`;
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors du chargement des données</h4><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function testFrontendMapping() {
+            const resultDiv = document.getElementById('mapping-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                // Appliquer le mapping comme dans le frontend
+                const mappedReports = reports.map(mapBackend);
+                
+                let html = '<div class="success">';
+                html += `<h4>✅ Mapping frontend appliqué</h4>`;
+                html += `<p><strong>Nombre de rapports mappés:</strong> ${mappedReports.length}</p>`;
+                
+                mappedReports.forEach((r, index) => {
+                    html += `<div class="report-card">`;
+                    html += `<h4>Rapport ${index + 1}: ${r.title}</h4>`;
+                    html += `<p><strong>ID:</strong> ${r.id}</p>`;
+                    html += `<p><strong>caseId (après mapping):</strong> <span class="case-number">${r.caseId || 'AUCUN'}</span></p>`;
+                    html += `<p><strong>Date formatée:</strong> ${r.createdAt}</p>`;
+                    html += `<p><strong>Statut formaté:</strong> ${r.status}</p>`;
+                    html += `<p><strong>Bénéficiaire:</strong> ${r.beneficiary || 'Non défini'}</p>`;
+                    html += `<p><strong>Initiateur:</strong> ${r.initiator || 'Non défini'}</p>`;
+                    html += `</div>`;
+                });
+                
+                html += '<h5>Données mappées:</h5>';
+                html += `<pre>${JSON.stringify(mappedReports, null, 2)}</pre>`;
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors du mapping</h4><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function simulateCardsWithCaseId() {
+            const resultDiv = document.getElementById('cards-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                // Appliquer le mapping
+                const mappedReports = reports.map(mapBackend);
+                
+                let html = '<div class="success">';
+                html += '<h4>🎴 Simulation des cartes avec caseId</h4>';
+                html += '<p>Voici comment les cartes de rapport devraient s\'afficher :</p>';
+                
+                mappedReports.forEach((report, index) => {
+                    html += `<div class="report-card">`;
+                    html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                    html += `<div style="height: 40px; width: 40px; background: #f0f9ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">📄</div>`;
+                    html += `<button style="background: none; border: none; font-size: 18px;">☆</button>`;
+                    html += `</div>`;
+                    html += `<h3 style="margin-top: 12px; font-weight: 600;">${report.title}</h3>`;
+                    html += `<p style="font-size: 14px; color: #64748b;">Créé le ${report.createdAt}</p>`;
+                    if (report.caseId) {
+                        html += `<p style="font-size: 12px; color: #64748b;">Dossier: <span style="font-family: monospace; background: #e3f2fd; padding: 2px 4px; border-radius: 3px;">${report.caseId}</span></p>`;
+                    } else {
+                        html += `<p style="font-size: 12px; color: #ff6b6b;">⚠️ Aucun numéro de dossier</p>`;
+                    }
+                    html += `<div style="margin-top: 16px; font-size: 14px;">`;
+                    html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>👤 Bénéficiaire:</span><span style="font-weight: 500;">${report.beneficiary || 'Non défini'}</span></div>`;
+                    html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>📝 Initiateur:</span><span style="font-weight: 500;">${report.initiator || 'Non défini'}</span></div>`;
+                    html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>🏥 Assuré:</span><span style="font-weight: 500;">${report.insured || 'Non défini'}</span></div>`;
+                    html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>📋 Souscripteur:</span><span style="font-weight: 500;">${report.subscriber || 'Non défini'}</span></div>`;
+                    html += `</div>`;
+                    html += `<div style="margin-top: 12px;">`;
+                    const badgeColor = report.status === 'Disponible' ? '#fef3c7' : report.status === 'En attente' ? '#fef3c7' : '#d1fae5';
+                    const textColor = report.status === 'Disponible' ? '#92400e' : report.status === 'En attente' ? '#92400e' : '#065f46';
+                    html += `<span style="background: ${badgeColor}; color: ${textColor}; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${report.status}</span>`;
+                    html += `</div>`;
+                    html += `<div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+                    html += `<button style="padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: white;">Prévisualiser</button>`;
+                    html += `<button style="padding: 8px; border: none; border-radius: 6px; background: #3b82f6; color: white;">Télécharger</button>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                });
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors de la simulation</h4><p>${error.message}</p></div>`;
+            }
+        }
+    </script>
+</body>
+</html>

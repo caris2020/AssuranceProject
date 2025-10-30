@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Calcul Abonnement</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Test du Calcul des Jours Restants</h1>
+    <button onclick="testSubscriptionCalculation()">Tester le Calcul</button>
+    <div id="results"></div>
+
+    <script>
+        async function testSubscriptionCalculation() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                // Test de connexion avec l'utilisateur octavio
+                const loginResponse = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'octavio',
+                        insuranceCompany: 'Test Company',
+                        password: 'password123'
+                    })
+                });
+
+                if (!loginResponse.ok) {
+                    throw new Error('Échec de la connexion');
+                }
+
+                const userData = await loginResponse.json();
+                
+                // Afficher les informations d'abonnement
+                const startDate = new Date(userData.subscriptionStartDate);
+                const endDate = new Date(userData.subscriptionEndDate);
+                const now = new Date();
+                const daysUntilExpiration = userData.daysUntilExpiration;
+
+                let html = `
+                    <div class="result info">
+                        <h3>Informations d'Abonnement (Octavio)</h3>
+                        <p><strong>Date de début:</strong> ${startDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date de fin:</strong> ${endDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date actuelle:</strong> ${now.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Jours restants (API):</strong> ${daysUntilExpiration}</p>
+                        <p><strong>Statut:</strong> ${userData.subscriptionStatus}</p>
+                        <p><strong>Actif:</strong> ${userData.subscriptionActive}</p>
+                    </div>
+                `;
+
+                // Calculs de vérification
+                const daysUntilStart = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+                html += `
+                    <div class="result info">
+                        <h3>Calculs de Vérification</h3>
+                        <p><strong>Jours jusqu'au début:</strong> ${daysUntilStart}</p>
+                        <p><strong>Jours jusqu'à la fin:</strong> ${daysUntilEnd}</p>
+                    </div>
+                `;
+
+                // Vérification de la cohérence
+                let isConsistent = true;
+                let consistencyMessage = '';
+
+                if (now < startDate) {
+                    // Abonnement n'a pas encore commencé
+                    if (daysUntilExpiration !== daysUntilStart) {
+                        isConsistent = false;
+                        consistencyMessage = `Incohérence: L'abonnement n'a pas commencé mais l'API retourne ${daysUntilExpiration} au lieu de ${daysUntilStart}`;
+                    } else {
+                        consistencyMessage = '✅ Cohérent: L\'abonnement n\'a pas encore commencé';
+                    }
+                } else if (now > endDate) {
+                    // Abonnement expiré
+                    if (daysUntilExpiration !== 0) {
+                        isConsistent = false;
+                        consistencyMessage = `Incohérence: L'abonnement est expiré mais l'API retourne ${daysUntilExpiration} au lieu de 0`;
+                    } else {
+                        consistencyMessage = '✅ Cohérent: L\'abonnement est expiré';
+                    }
+                } else {
+                    // Abonnement en cours
+                    if (daysUntilExpiration !== daysUntilEnd) {
+                        isConsistent = false;
+                        consistencyMessage = `Incohérence: L'abonnement est en cours mais l'API retourne ${daysUntilExpiration} au lieu de ${daysUntilEnd}`;
+                    } else {
+                        consistencyMessage = '✅ Cohérent: L\'abonnement est en cours';
+                    }
+                }
+
+                html += `
+                    <div class="result ${isConsistent ? 'success' : 'error'}">
+                        <h3>Vérification de Cohérence</h3>
+                        <p>${consistencyMessage}</p>
+                    </div>
+                `;
+
+                // Test du statut
+                let statusMessage = '';
+                if (userData.subscriptionStatus === 'ACTIVE' && now < startDate) {
+                    statusMessage = '⚠️ Le statut est ACTIVE mais l\'abonnement n\'a pas encore commencé';
+                } else if (userData.subscriptionStatus === 'EXPIRED' && now < endDate) {
+                    statusMessage = '⚠️ Le statut est EXPIRED mais l\'abonnement n\'est pas encore expiré';
+                } else {
+                    statusMessage = '✅ Le statut semble cohérent';
+                }
+
+                html += `
+                    <div class="result ${statusMessage.includes('⚠️') ? 'error' : 'success'}">
+                        <h3>Vérification du Statut</h3>
+                        <p>${statusMessage}</p>
+                    </div>
+                `;
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>Erreur</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

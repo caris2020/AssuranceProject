@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cartes Rapports - Propriétaire et Permissions</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .report-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .owner-badge { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .readonly-indicator { background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; padding: 8px; text-align: center; font-size: 12px; color: #6b7280; }
+        .action-button { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 2px; cursor: pointer; }
+        .delete-button { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 2px; cursor: pointer; }
+        .user-role { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Test Cartes Rapports - Propriétaire et Permissions</h1>
+    
+    <div class="test-section info">
+        <h3>Nouvelles Fonctionnalités Implémentées</h3>
+        <p>Les cartes de rapports affichent maintenant :</p>
+        <ul>
+            <li>✅ <strong>Nom du propriétaire</strong> : "Par: [Nom du créateur]"</li>
+            <li>✅ <strong>Badge "Votre rapport"</strong> : Pour les rapports créés par l'utilisateur actuel</li>
+            <li>✅ <strong>Boutons d'actions conditionnels</strong> : Seuls les boutons autorisés sont affichés</li>
+            <li>✅ <strong>Indicateur de lecture seule</strong> : Pour les rapports d'autres utilisateurs</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des Cartes de Rapports</h3>
+        <button class="simulate-button" onclick="simulateReportCards()">🎴 Simuler les cartes de rapports</button>
+        <div id="cards-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des Permissions</h3>
+        <button class="test-button" onclick="testPermissions()">🔐 Tester les permissions</button>
+        <div id="permissions-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Instructions de test</h3>
+        <div id="instructions-result"></div>
+    </div>
+
+    <script>
+        function simulateReportCards() {
+            const resultDiv = document.getElementById('cards-result');
+            
+            const currentUser = 'admin';
+            const testReports = [
+                {
+                    id: 1,
+                    title: 'Rapport d\'enquête frauduleuse',
+                    createdAt: '22/08/2025',
+                    createdBy: 'admin',
+                    caseCode: 'PXWJP4YH2J',
+                    beneficiary: 'Jean Dupont',
+                    initiator: 'Service Enquête',
+                    insured: 'Marie Martin',
+                    subscriber: 'Assurance Plus',
+                    status: 'Disponible',
+                    canEdit: true,
+                    canDelete: true
+                },
+                {
+                    id: 2,
+                    title: 'Rapport de vérification',
+                    createdAt: '21/08/2025',
+                    createdBy: 'user1',
+                    caseCode: 'SCORE001',
+                    beneficiary: 'Pierre Durand',
+                    initiator: 'Service Vérification',
+                    insured: 'Sophie Bernard',
+                    subscriber: 'Assurance Premium',
+                    status: 'En attente',
+                    canEdit: false,
+                    canDelete: false
+                },
+                {
+                    id: 3,
+                    title: 'Rapport de contrôle',
+                    createdAt: '20/08/2025',
+                    createdBy: 'point_focal',
+                    caseCode: 'VERIFID001',
+                    beneficiary: 'Luc Moreau',
+                    initiator: 'Service Contrôle',
+                    insured: 'Anne Petit',
+                    subscriber: 'Assurance Standard',
+                    status: 'Traité',
+                    canEdit: false,
+                    canDelete: false
+                }
+            ];
+            
+            let html = '<div class="success">';
+            html += '<h4>🎴 Simulation des cartes de rapports</h4>';
+            html += '<p>Utilisateur actuel : <span class="user-role">' + currentUser + '</span></p>';
+            html += '<p>Voici comment les cartes s\'affichent :</p>';
+            
+            testReports.forEach(report => {
+                const isOwner = report.createdBy === currentUser;
+                const hasActions = report.canEdit || report.canDelete;
+                
+                html += '<div class="report-card">';
+                html += '<h5 style="margin: 0 0 10px 0;">📄 ' + report.title + '</h5>';
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">Créé le ' + report.createdAt + '</p>';
+                
+                // Affichage du propriétaire
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">';
+                html += 'Par: <span style="font-weight: bold;">' + report.createdBy + '</span>';
+                if (isOwner) {
+                    html += ' <span class="owner-badge">👤 Votre rapport</span>';
+                }
+                html += '</p>';
+                
+                // Code du dossier
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">Dossier: <span style="font-family: monospace;">' + report.caseCode + '</span></p>';
+                
+                // Informations du rapport
+                html += '<div style="margin: 10px 0; font-size: 12px;">';
+                html += '<div>👤 Bénéficiaire: <span style="font-weight: bold;">' + report.beneficiary + '</span></div>';
+                html += '<div>📝 Initiateur: <span style="font-weight: bold;">' + report.initiator + '</span></div>';
+                html += '<div>🏥 Assuré: <span style="font-weight: bold;">' + report.insured + '</span></div>';
+                html += '<div>📋 Souscripteur: <span style="font-weight: bold;">' + report.subscriber + '</span></div>';
+                html += '</div>';
+                
+                // Statut
+                html += '<div style="margin: 10px 0;">';
+                html += '<span style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 12px; font-size: 12px;">' + report.status + '</span>';
+                html += '</div>';
+                
+                // Boutons d'actions
+                html += '<div style="margin: 10px 0;">';
+                html += '<button class="action-button">Prévisualiser</button>';
+                html += '<button class="action-button">Télécharger</button>';
+                html += '</div>';
+                
+                // Actions conditionnelles
+                if (hasActions) {
+                    html += '<div style="margin: 10px 0;">';
+                    if (report.canEdit) {
+                        html += '<button class="action-button">Modifier</button>';
+                    }
+                    if (report.canDelete) {
+                        html += '<button class="delete-button">Supprimer</button>';
+                    }
+                    html += '</div>';
+                } else if (!isOwner) {
+                    html += '<div class="readonly-indicator">';
+                    html += '👁️ Lecture seule - Rapport créé par ' + report.createdBy;
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testPermissions() {
+            const resultDiv = document.getElementById('permissions-result');
+            
+            let html = '<div class="warning">';
+            html += '<h4>🔐 Test des permissions</h4>';
+            html += '<p><strong>Scénarios de test :</strong></p>';
+            html += '<ul>';
+            html += '<li><strong>Propriétaire du rapport</strong> : Voir badge "Votre rapport" + boutons Modifier/Supprimer ✅</li>';
+            html += '<li><strong>Non-propriétaire</strong> : Voir "Lecture seule" + nom du créateur ✅</li>';
+            html += '<li><strong>Actions conditionnelles</strong> : Seuls les boutons autorisés s\'affichent ✅</li>';
+            html += '<li><strong>Affichage du créateur</strong> : "Par: [Nom]" visible sur toutes les cartes ✅</li>';
+            html += '</ul>';
+            html += '<p><strong>Résultat attendu :</strong> Interface claire avec permissions visibles et actions appropriées</p>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        function showInstructions() {
+            const resultDiv = document.getElementById('instructions-result');
+            
+            let html = '<div class="info">';
+            html += '<h4>📋 Instructions de test</h4>';
+            html += '<p><strong>Pour vérifier les nouvelles fonctionnalités :</strong></p>';
+            html += '<ol>';
+            html += '<li>Connectez-vous avec un utilisateur (admin, point_focal, ou user)</li>';
+            html += '<li>Allez sur la page des rapports</li>';
+            html += '<li>Vérifiez que chaque carte affiche "Par: [Nom du créateur]"</li>';
+            html += '<li>Vérifiez que vos rapports ont le badge "👤 Votre rapport"</li>';
+            html += '<li>Vérifiez que vos rapports ont les boutons "Modifier" et "Supprimer"</li>';
+            html += '<li>Vérifiez que les rapports d\'autres utilisateurs affichent "Lecture seule"</li>';
+            html += '<li>Créez un nouveau rapport et vérifiez qu\'il apparaît avec vos permissions</li>';
+            html += '</ol>';
+            html += '<p><strong>Résultat attendu :</strong> Interface claire avec propriétaire visible et permissions appropriées.</p>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // Charger les instructions au chargement de la page
+        window.onload = function() {
+            showInstructions();
+        };
+    </script>
+</body>
+</html>

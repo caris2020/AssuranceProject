@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>Test API Simple</h1>
+    <button onclick="testAPI()">Tester l'API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'octavio',
+                        insuranceCompany: 'Test Company',
+                        password: 'password123'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+
+                const userData = await response.json();
+                
+                const startDate = new Date(userData.subscriptionStartDate);
+                const endDate = new Date(userData.subscriptionEndDate);
+                const now = new Date();
+                const daysUntilExpiration = userData.daysUntilExpiration;
+
+                // Calcul de la logique attendue
+                let expectedDays;
+                let expectedStatus;
+                
+                if (now < startDate) {
+                    expectedDays = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    expectedStatus = 'not_started';
+                } else if (now > endDate) {
+                    expectedDays = 0;
+                    expectedStatus = 'expired';
+                } else {
+                    expectedDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    expectedStatus = 'active';
+                }
+
+                const isCorrect = daysUntilExpiration === expectedDays;
+
+                let html = `
+                    <div class="result info">
+                        <h3>Résultats du Test</h3>
+                        <p><strong>Date de début:</strong> ${startDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date de fin:</strong> ${endDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date actuelle:</strong> ${now.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Jours restants (API):</strong> ${daysUntilExpiration}</p>
+                        <p><strong>Jours attendus:</strong> ${expectedDays}</p>
+                        <p><strong>Statut attendu:</strong> ${expectedStatus}</p>
+                    </div>
+                `;
+
+                html += `
+                    <div class="result ${isCorrect ? 'success' : 'error'}">
+                        <h3>${isCorrect ? '✅ SUCCÈS' : '❌ ÉCHEC'}</h3>
+                        <p><strong>Résultat:</strong> ${isCorrect ? 'Les corrections fonctionnent !' : 'Les corrections ne fonctionnent pas encore.'}</p>
+                        <p><strong>API retourne:</strong> ${daysUntilExpiration} jours</p>
+                        <p><strong>Attendu:</strong> ${expectedDays} jours</p>
+                    </div>
+                `;
+
+                if (!isCorrect) {
+                    html += `
+                        <div class="result error">
+                            <h3>Prochaines Étapes</h3>
+                            <p>1. Vider le cache du navigateur (Ctrl+Shift+R)</p>
+                            <p>2. Ouvrir l'application en mode incognito</p>
+                            <p>3. Se reconnecter</p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="result success">
+                            <h3>✅ Corrections Déployées</h3>
+                            <p>L'API fonctionne correctement !</p>
+                            <p>L'incohérence dans l'interface vient du cache du navigateur.</p>
+                            <p><strong>Solution:</strong> Ouvrir l'application en mode incognito.</p>
+                        </div>
+                    `;
+                }
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>Erreur</h3>
+                        <p>${error.message}</p>
+                        <p><strong>Vérifiez que:</strong></p>
+                        <ul>
+                            <li>Le backend est démarré sur http://localhost:8080</li>
+                            <li>L'utilisateur 'octavio' existe</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

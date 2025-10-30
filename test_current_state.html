@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test État Actuel</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>Test de l'État Actuel</h1>
+    <button onclick="testCurrentState()">Tester l'État Actuel</button>
+    <div id="results"></div>
+
+    <script>
+        async function testCurrentState() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                // Test de connexion avec l'utilisateur octavio
+                const loginResponse = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'octavio',
+                        insuranceCompany: 'Test Company',
+                        password: 'password123'
+                    })
+                });
+
+                if (!loginResponse.ok) {
+                    throw new Error('Échec de la connexion');
+                }
+
+                const userData = await loginResponse.json();
+                
+                // Afficher les informations d'abonnement
+                const startDate = new Date(userData.subscriptionStartDate);
+                const endDate = new Date(userData.subscriptionEndDate);
+                const now = new Date();
+                const daysUntilExpiration = userData.daysUntilExpiration;
+
+                let html = `
+                    <div class="result info">
+                        <h3>Données Actuelles de l'API</h3>
+                        <p><strong>Date de début:</strong> ${startDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date de fin:</strong> ${endDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date actuelle:</strong> ${now.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Jours restants (API):</strong> ${daysUntilExpiration}</p>
+                        <p><strong>Statut:</strong> ${userData.subscriptionStatus}</p>
+                        <p><strong>Actif:</strong> ${userData.subscriptionActive}</p>
+                    </div>
+                `;
+
+                // Test de la logique corrigée
+                let expectedDaysUntilExpiration;
+                let expectedStatus;
+                let expectedMessage;
+
+                if (now < startDate) {
+                    // Abonnement n'a pas encore commencé
+                    expectedDaysUntilExpiration = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    expectedStatus = 'not_started';
+                    expectedMessage = `L'abonnement n'a pas encore commencé. Il commence dans ${expectedDaysUntilExpiration} jours.`;
+                } else if (now > endDate) {
+                    // Abonnement expiré
+                    expectedDaysUntilExpiration = 0;
+                    expectedStatus = 'expired';
+                    expectedMessage = 'L\'abonnement est expiré.';
+                } else {
+                    // Abonnement en cours
+                    expectedDaysUntilExpiration = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    expectedStatus = 'active';
+                    expectedMessage = `L'abonnement est en cours. Il expire dans ${expectedDaysUntilExpiration} jours.`;
+                }
+
+                html += `
+                    <div class="result ${expectedStatus === 'active' ? 'success' : expectedStatus === 'expired' ? 'error' : 'warning'}">
+                        <h3>Logique Corrigée (Attendu)</h3>
+                        <p><strong>Statut attendu:</strong> ${expectedStatus}</p>
+                        <p><strong>Jours restants attendus:</strong> ${expectedDaysUntilExpiration}</p>
+                        <p><strong>Message attendu:</strong> ${expectedMessage}</p>
+                    </div>
+                `;
+
+                // Vérification de la cohérence
+                const isConsistent = daysUntilExpiration === expectedDaysUntilExpiration;
+                
+                html += `
+                    <div class="result ${isConsistent ? 'success' : 'error'}">
+                        <h3>Vérification de Cohérence</h3>
+                        <p><strong>Cohérence:</strong> ${isConsistent ? '✅ API et logique cohérentes' : '❌ Incohérence détectée'}</p>
+                        <p><strong>API retourne:</strong> ${daysUntilExpiration} jours</p>
+                        <p><strong>Logique attend:</strong> ${expectedDaysUntilExpiration} jours</p>
+                    </div>
+                `;
+
+                // Test de la barre de progression
+                let progressPercentage;
+                if (expectedStatus === 'not_started') {
+                    progressPercentage = 0;
+                } else if (expectedStatus === 'expired') {
+                    progressPercentage = 100;
+                } else {
+                    const totalDuration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                    const elapsedTime = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                    progressPercentage = Math.min(100, Math.max(0, (elapsedTime / totalDuration) * 100));
+                }
+
+                html += `
+                    <div class="result info">
+                        <h3>Barre de Progression (Attendue)</h3>
+                        <p><strong>Pourcentage écoulé:</strong> ${Math.round(progressPercentage)}%</p>
+                        <div style="width: 100%; background-color: #e9ecef; border-radius: 5px; height: 20px; margin: 10px 0;">
+                            <div style="width: ${progressPercentage}%; background-color: ${progressPercentage >= 100 ? '#dc3545' : progressPercentage >= 80 ? '#ffc107' : '#28a745'}; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                        </div>
+                    </div>
+                `;
+
+                // Analyse du problème
+                if (!isConsistent) {
+                    html += `
+                        <div class="result error">
+                            <h3>Analyse du Problème</h3>
+                            <p><strong>Problème identifié:</strong> L'API retourne ${daysUntilExpiration} jours mais la logique attend ${expectedDaysUntilExpiration} jours.</p>
+                            <p><strong>Cause possible:</strong> Les corrections de code n'ont pas été déployées ou il y a un problème de cache.</p>
+                            <p><strong>Solution:</strong> Redémarrer le backend et vider le cache du navigateur.</p>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="result success">
+                            <h3>✅ Test Réussi</h3>
+                            <p>La logique de calcul fonctionne correctement !</p>
+                            <p>L'incohérence dans l'interface vient probablement du cache du navigateur ou d'un problème d'affichage.</p>
+                        </div>
+                    `;
+                }
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>Erreur</h3>
+                        <p>${error.message}</p>
+                        <p><strong>Vérifiez que:</strong></p>
+                        <ul>
+                            <li>Le backend est démarré sur http://localhost:8080</li>
+                            <li>L'utilisateur 'octavio' existe avec le mot de passe 'password123'</li>
+                            <li>Il n'y a pas de problème de CORS</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

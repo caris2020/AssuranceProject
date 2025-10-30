@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correction Utilisateur Hermann Glan</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .user-info { border: 2px solid #ddd; padding: 15px; margin: 20px 0; border-radius: 5px; }
+        .problem { border-color: #ff6b6b; background-color: #fff5f5; }
+        .fixed { border-color: #51cf66; background-color: #f8fff9; }
+        .status { font-weight: bold; padding: 5px 10px; border-radius: 3px; }
+        .registered { background-color: #d4edda; color: #155724; }
+        .inactive { background-color: #f8d7da; color: #721c24; }
+        .active { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .fix-btn { background-color: #28a745; color: white; }
+        .fix-btn:hover { background-color: #218838; }
+        .check-btn { background-color: #007bff; color: white; }
+        .check-btn:hover { background-color: #0056b3; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correction Utilisateur Hermann Glan</h1>
+        <p>Cette page permet de corriger le problème du bouton "Désactiver" manquant pour l'utilisateur hermann glan.</p>
+        
+        <div id="userInfo" class="user-info problem">
+            <h3>État actuel de l'utilisateur</h3>
+            <p><strong>Nom:</strong> hermann glan</p>
+            <p><strong>Email:</strong> noumano296@gmail.com</p>
+            <p><strong>Compagnie:</strong> ALLIANZ</p>
+            <p><strong>Statut:</strong> <span class="status registered">REGISTERED</span></p>
+            <p><strong>Actif:</strong> <span id="activeStatus" class="status inactive">Non (Problème)</span></p>
+            <p><strong>Bouton affiché:</strong> <span class="error">Activer (au lieu de Désactiver)</span></p>
+        </div>
+
+        <div>
+            <button class="check-btn" onclick="checkUser()">🔍 Vérifier l'état actuel</button>
+            <button class="fix-btn" onclick="fixUser()">✅ Corriger l'utilisateur</button>
+        </div>
+
+        <div id="result"></div>
+
+        <div style="margin-top: 30px; padding: 15px; background-color: #e9ecef; border-radius: 5px;">
+            <h4>📋 Instructions après correction</h4>
+            <ol>
+                <li>Cliquez sur "Corriger l'utilisateur" ci-dessus</li>
+                <li>Attendez la confirmation de succès</li>
+                <li>Retournez à votre page d'administration</li>
+                <li>Actualisez la page (F5)</li>
+                <li>Vous devriez maintenant voir le bouton "🚫 Désactiver" pour hermann glan</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        const USER_EMAIL = 'noumano296@gmail.com';
+
+        async function checkUser() {
+            try {
+                const response = await fetch(`${API_BASE}/api/users`);
+                const users = await response.json();
+                const user = users.find(u => u.email === USER_EMAIL);
+                
+                if (user) {
+                    displayUserInfo(user);
+                } else {
+                    document.getElementById('result').innerHTML = '<p class="error">Utilisateur non trouvé</p>';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p class="error">Erreur: ${error.message}</p>`;
+            }
+        }
+
+        function displayUserInfo(user) {
+            const activeStatus = document.getElementById('activeStatus');
+            const userInfo = document.getElementById('userInfo');
+            
+            if (user.isActive) {
+                activeStatus.textContent = 'Oui (Correct)';
+                activeStatus.className = 'status active';
+                userInfo.className = 'user-info fixed';
+                document.getElementById('result').innerHTML = '<p class="success">✅ Utilisateur déjà corrigé ! Le bouton "Désactiver" devrait être visible.</p>';
+            } else {
+                activeStatus.textContent = 'Non (Problème)';
+                activeStatus.className = 'status inactive';
+                userInfo.className = 'user-info problem';
+                document.getElementById('result').innerHTML = '<p class="error">❌ Problème confirmé. Cliquez sur "Corriger l\'utilisateur".</p>';
+            }
+        }
+
+        async function fixUser() {
+            try {
+                // D'abord, récupérer l'utilisateur pour obtenir son ID
+                const response = await fetch(`${API_BASE}/api/users`);
+                const users = await response.json();
+                const user = users.find(u => u.email === USER_EMAIL);
+                
+                if (!user) {
+                    document.getElementById('result').innerHTML = '<p class="error">Utilisateur non trouvé</p>';
+                    return;
+                }
+
+                // Activer l'utilisateur
+                const activateResponse = await fetch(`${API_BASE}/api/users/${user.id}/activate`, {
+                    method: 'POST'
+                });
+
+                if (activateResponse.ok) {
+                    document.getElementById('result').innerHTML = '<p class="success">✅ Utilisateur hermann glan corrigé avec succès !</p>';
+                    
+                    // Mettre à jour l'affichage
+                    setTimeout(() => {
+                        checkUser();
+                    }, 1000);
+                } else {
+                    document.getElementById('result').innerHTML = '<p class="error">❌ Erreur lors de la correction</p>';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p class="error">Erreur: ${error.message}</p>`;
+            }
+        }
+
+        // Vérifier l'état au chargement de la page
+        window.onload = checkUser;
+    </script>
+</body>
+</html>

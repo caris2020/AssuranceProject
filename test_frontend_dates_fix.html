@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Correction des dates dans le frontend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .comparison-table th, .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .comparison-table th {
+            background-color: #f2f2f2;
+        }
+        .backend-data {
+            background-color: #e8f5e8;
+        }
+        .frontend-data {
+            background-color: #e8f4fd;
+        }
+        .match {
+            background-color: #d4edda;
+        }
+        .mismatch {
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test - Correction des dates dans le frontend</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Description du problème</h3>
+            <p>Le problème était que les deux sections (Utilisateurs et Abonnements) affichaient des jours restants différents pour les mêmes utilisateurs.</p>
+            <p><strong>Cause :</strong> La section "Abonnements" utilisait une date fixe <code>new Date('2025-08-27')</code> dans les fonctions de calcul, tandis que la section "Utilisateurs" utilisait les données du backend qui avaient été corrigées.</p>
+            <p><strong>Solution :</strong> Remplacement de toutes les dates fixes par <code>new Date()</code> pour utiliser la date actuelle réelle dans tout le frontend.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Tests à effectuer</h3>
+            <button onclick="testDateConsistency()">1. Vérifier la cohérence des dates</button>
+            <button onclick="testBackendFrontendMatch()">2. Comparer backend et frontend</button>
+            <button onclick="testAllComponents()">3. Tester tous les composants</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="test-section">
+            <h3>📊 Comparaison des données</h3>
+            <div id="comparisonResults"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        function displayResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        // Fonction pour calculer les jours restants côté frontend (version corrigée)
+        function calculateDaysRemainingFrontend(endDate) {
+            const end = new Date(endDate);
+            const now = new Date();
+            
+            const diffTime = end.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        // Fonction pour calculer les jours restants côté frontend (ancienne version avec date fixe)
+        function calculateDaysRemainingFrontendOld(endDate) {
+            const end = new Date(endDate);
+            const backendDate = new Date('2025-08-27');
+            
+            const diffTime = end.getTime() - backendDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        async function testDateConsistency() {
+            try {
+                displayResult('🔍 Test de la cohérence des dates...', 'info');
+                
+                const now = new Date();
+                const currentDate = now.toLocaleDateString('fr-FR');
+                const currentTime = now.toLocaleTimeString('fr-FR');
+                
+                displayResult(`✅ Date actuelle : ${currentDate} à ${currentTime}`, 'success');
+                
+                // Test avec des dates d'exemple
+                const testDates = [
+                    '2026-08-29',
+                    '2027-09-02', 
+                    '2027-08-30'
+                ];
+                
+                displayResult('📊 Test des calculs de jours restants :', 'info');
+                
+                testDates.forEach(date => {
+                    const oldCalculation = calculateDaysRemainingFrontendOld(date);
+                    const newCalculation = calculateDaysRemainingFrontend(date);
+                    
+                    displayResult(`Date ${date}: Ancien calcul = ${oldCalculation} jours, Nouveau calcul = ${newCalculation} jours`, 
+                        oldCalculation === newCalculation ? 'success' : 'error');
+                });
+                
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test de cohérence : ${error.message}`, 'error');
+            }
+        }
+
+        async function testBackendFrontendMatch() {
+            try {
+                displayResult('🔍 Test de correspondance backend/frontend...', 'info');
+                
+                const response = await fetch(`${API_BASE}/users`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const users = await response.json();
+                displayResult(`✅ ${users.length} utilisateurs récupérés du backend`, 'success');
+                
+                const comparisonResultsDiv = document.getElementById('comparisonResults');
+                comparisonResultsDiv.innerHTML = `
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Date de fin</th>
+                                <th>Backend (jours)</th>
+                                <th>Frontend (nouveau)</th>
+                                <th>Frontend (ancien)</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(user => {
+                                const endDate = user.subscriptionEndDate;
+                                const backendDays = user.daysUntilExpiration;
+                                const frontendNewDays = endDate ? calculateDaysRemainingFrontend(endDate) : 'N/A';
+                                const frontendOldDays = endDate ? calculateDaysRemainingFrontendOld(endDate) : 'N/A';
+                                
+                                let status = 'N/A';
+                                let statusClass = '';
+                                
+                                if (user.role === 'ADMIN') {
+                                    status = 'Administrateur (permanent)';
+                                    statusClass = 'match';
+                                } else if (endDate) {
+                                    const backendMatch = backendDays === frontendNewDays;
+                                    const oldMatch = backendDays === frontendOldDays;
+                                    
+                                    if (backendMatch && !oldMatch) {
+                                        status = '✅ Corrigé';
+                                        statusClass = 'match';
+                                    } else if (backendMatch && oldMatch) {
+                                        status = 'ℹ️ Déjà correct';
+                                        statusClass = 'match';
+                                    } else if (!backendMatch && oldMatch) {
+                                        status = '❌ Régression';
+                                        statusClass = 'mismatch';
+                                    } else {
+                                        status = '❌ Incohérent';
+                                        statusClass = 'mismatch';
+                                    }
+                                }
+                                
+                                return `
+                                    <tr class="${statusClass}">
+                                        <td>${user.firstName} ${user.lastName}</td>
+                                        <td>${endDate ? new Date(endDate).toLocaleDateString('fr-FR') : 'N/A'}</td>
+                                        <td class="backend-data">${user.role === 'ADMIN' ? '∞' : backendDays}</td>
+                                        <td class="frontend-data">${user.role === 'ADMIN' ? '∞' : frontendNewDays}</td>
+                                        <td class="frontend-data">${user.role === 'ADMIN' ? '∞' : frontendOldDays}</td>
+                                        <td>${status}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                // Analyser les résultats
+                const issues = [];
+                users.forEach(user => {
+                    if (user.role !== 'ADMIN' && user.subscriptionEndDate) {
+                        const backendDays = user.daysUntilExpiration;
+                        const frontendNewDays = calculateDaysRemainingFrontend(user.subscriptionEndDate);
+                        const frontendOldDays = calculateDaysRemainingFrontendOld(user.subscriptionEndDate);
+                        
+                        if (backendDays !== frontendNewDays) {
+                            issues.push(`${user.firstName} ${user.lastName}: Backend=${backendDays}, Frontend=${frontendNewDays}`);
+                        }
+                        
+                        if (backendDays === frontendOldDays && backendDays !== frontendNewDays) {
+                            issues.push(`${user.firstName} ${user.lastName}: La correction a introduit une incohérence`);
+                        }
+                    }
+                });
+                
+                if (issues.length > 0) {
+                    displayResult(`⚠️ Problèmes détectés :<br>${issues.map(issue => `• ${issue}`).join('<br>')}`, 'error');
+                } else {
+                    displayResult('✅ Toutes les données sont cohérentes entre backend et frontend', 'success');
+                }
+                
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test de correspondance : ${error.message}`, 'error');
+            }
+        }
+
+        async function testAllComponents() {
+            try {
+                displayResult('🔍 Test de tous les composants...', 'info');
+                
+                // Test des endpoints d'abonnement
+                const endpoints = [
+                    '/api/subscriptions/active',
+                    '/api/subscriptions/expired',
+                    '/api/subscriptions/expiring-soon',
+                    '/api/subscriptions/pending-renewal'
+                ];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(`http://localhost:8080${endpoint}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            displayResult(`✅ ${endpoint}: ${data.length} utilisateurs`, 'success');
+                        } else {
+                            displayResult(`❌ ${endpoint}: Erreur ${response.status}`, 'error');
+                        }
+                    } catch (error) {
+                        displayResult(`❌ ${endpoint}: ${error.message}`, 'error');
+                    }
+                }
+                
+                // Test de la cohérence entre les différents endpoints
+                try {
+                    const [activeResponse, allUsersResponse] = await Promise.all([
+                        fetch('http://localhost:8080/api/subscriptions/active'),
+                        fetch(`${API_BASE}/users`)
+                    ]);
+                    
+                    if (activeResponse.ok && allUsersResponse.ok) {
+                        const activeUsers = await activeResponse.json();
+                        const allUsers = await allUsersResponse.json();
+                        
+                        const activeUserIds = activeUsers.map(u => u.id);
+                        const allUserIds = allUsers.map(u => u.id);
+                        
+                        const activeInAll = activeUserIds.every(id => allUserIds.includes(id));
+                        
+                        if (activeInAll) {
+                            displayResult('✅ Cohérence entre endpoints d\'abonnement et utilisateurs', 'success');
+                        } else {
+                            displayResult('⚠️ Incohérence entre endpoints d\'abonnement et utilisateurs', 'error');
+                        }
+                    }
+                } catch (error) {
+                    displayResult(`❌ Erreur lors du test de cohérence des endpoints : ${error.message}`, 'error');
+                }
+                
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test des composants : ${error.message}`, 'error');
+            }
+        }
+
+        // Test automatique au chargement de la page
+        window.onload = function() {
+            displayResult('🚀 Démarrage des tests automatiques...', 'info');
+            setTimeout(() => testDateConsistency(), 1000);
+            setTimeout(() => testBackendFrontendMatch(), 2000);
+            setTimeout(() => testAllComponents(), 3000);
+        };
+    </script>
+</body>
+</html>

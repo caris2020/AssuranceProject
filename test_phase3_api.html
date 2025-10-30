@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Phase 3 - API Calls</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            color: #2563eb;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 5px;
+        }
+        .test-step {
+            background: #f8fafc;
+            margin: 10px 0;
+            padding: 15px;
+            border-left: 4px solid #2563eb;
+            border-radius: 4px;
+        }
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .code-display {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .api-endpoint {
+            background: #f3f4f6;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Phase 3 - API Calls</h1>
+    
+    <div class="test-section">
+        <div class="test-title">🔐 Test 1: Validation des Codes Temporaires</div>
+        <div class="test-step">
+            <strong>Endpoint:</strong> <span class="api-endpoint">POST /api/download/validate-code</span>
+            <br>
+            <button onclick="testValidateAccessCode()">🔐 Tester Validation Code</button>
+            <div id="result-validate-code"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📋 Test 2: Création de Demande d'Accès</div>
+        <div class="test-step">
+            <strong>Endpoint:</strong> <span class="api-endpoint">POST /api/access-requests</span>
+            <br>
+            <button onclick="testCreateAccessRequest()">📋 Tester Création Demande</button>
+            <div id="result-create-request"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">👥 Test 3: Récupération des Demandes</div>
+        <div class="test-step">
+            <strong>Endpoints:</strong>
+            <br><span class="api-endpoint">GET /api/access-requests/pending</span>
+            <br><span class="api-endpoint">GET /api/access-requests/user/{userId}</span>
+            <br>
+            <button onclick="testGetAccessRequests()">👥 Tester Récupération Demandes</button>
+            <div id="result-get-requests"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">✅ Test 4: Approbation/Rejet de Demandes</div>
+        <div class="test-step">
+            <strong>Endpoints:</strong>
+            <br><span class="api-endpoint">POST /api/access-requests/{id}/approve</span>
+            <br><span class="api-endpoint">POST /api/access-requests/{id}/reject</span>
+            <br>
+            <button onclick="testApproveRejectRequests()">✅ Tester Approbation/Rejet</button>
+            <div id="result-approve-reject"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">🔄 Test 5: Vérification des Codes Valides</div>
+        <div class="test-step">
+            <strong>Endpoint:</strong> <span class="api-endpoint">GET /api/download/check-valid-code/{userId}/{reportId}</span>
+            <br>
+            <button onclick="testCheckValidCode()">🔄 Tester Vérification Code</button>
+            <div id="result-check-code"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        const TEST_USER = {
+            id: 'test-user-123',
+            name: 'Test User',
+            email: 'test@example.com',
+            company: 'Test Company'
+        };
+        const TEST_REPORT = {
+            id: 1,
+            title: 'Rapport de Test - Phase 3'
+        };
+
+        // Test 1: Validation des Codes Temporaires
+        async function testValidateAccessCode() {
+            const resultDiv = document.getElementById('result-validate-code');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                const testCodes = [
+                    { code: 'ABC-123-DEF', expected: true },
+                    { code: 'XYZ-789-GHI', expected: true },
+                    { code: 'INVALID', expected: false },
+                    { code: 'ABC123DEF', expected: false }
+                ];
+
+                let results = '';
+                for (const testCase of testCodes) {
+                    try {
+                        const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                reportId: TEST_REPORT.id,
+                                code: testCase.code
+                            })
+                        });
+
+                        const data = await response.json();
+                        const isValid = data.valid === testCase.expected;
+                        
+                        results += `
+                            <div class="test-step">
+                                <strong>Code:</strong> ${testCase.code}
+                                <br><strong>Attendu:</strong> ${testCase.expected ? 'Valide' : 'Invalide'}
+                                <br><strong>Résultat:</strong> ${data.valid ? 'Valide' : 'Invalide'}
+                                <br><strong>Statut:</strong> ${isValid ? '✅ Correct' : '❌ Incorrect'}
+                                <br><strong>Message:</strong> ${data.message || 'Aucun message'}
+                            </div>
+                        `;
+                    } catch (error) {
+                        results += `
+                            <div class="test-step">
+                                <strong>Code:</strong> ${testCase.code}
+                                <br><strong>Erreur:</strong> ${error.message}
+                                <br><strong>Statut:</strong> ❌ Erreur API
+                            </div>
+                        `;
+                    }
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Test de validation des codes terminé</div>
+                    ${results}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 2: Création de Demande d'Accès
+        async function testCreateAccessRequest() {
+            const resultDiv = document.getElementById('result-create-request');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                const requestData = {
+                    reportId: TEST_REPORT.id,
+                    reportTitle: TEST_REPORT.title,
+                    requesterName: TEST_USER.name,
+                    requesterEmail: TEST_USER.email,
+                    requesterCompany: TEST_USER.company,
+                    requesterPhone: '+225 0123456789',
+                    reason: 'Test de la Phase 3 - Validation API'
+                };
+
+                const response = await fetch(`${API_BASE}/api/access-requests?requesterId=${TEST_USER.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Demande d'accès créée avec succès</div>
+                        <div class="code-display">
+                            ID: ${data.id}
+                            Status: ${data.status}
+                            RequestedAt: ${data.requestedAt}
+                        </div>
+                        <div class="info">
+                            📋 Données envoyées:
+                            <br>• Rapport: ${requestData.reportTitle}
+                            <br>• Demandeur: ${requestData.requesterName}
+                            <br>• Email: ${requestData.requesterEmail}
+                            <br>• Compagnie: ${requestData.requesterCompany}
+                            <br>• Motif: ${requestData.reason}
+                        </div>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Erreur lors de la création</div>
+                        <div class="code-display">Status: ${response.status}
+                        ${errorText}</div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 3: Récupération des Demandes
+        async function testGetAccessRequests() {
+            const resultDiv = document.getElementById('result-get-requests');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                let results = '';
+
+                // Test 1: Demandes en attente
+                try {
+                    const pendingResponse = await fetch(`${API_BASE}/api/access-requests/pending`);
+                    if (pendingResponse.ok) {
+                        const pendingData = await pendingResponse.json();
+                        results += `
+                            <div class="test-step">
+                                <strong>Demandes en attente:</strong> ${pendingData.length}
+                                <br><strong>Statut:</strong> ✅ Succès
+                            </div>
+                        `;
+                    } else {
+                        results += `
+                            <div class="test-step">
+                                <strong>Demandes en attente:</strong>
+                                <br><strong>Statut:</strong> ❌ Erreur ${pendingResponse.status}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    results += `
+                        <div class="test-step">
+                            <strong>Demandes en attente:</strong>
+                            <br><strong>Erreur:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+
+                // Test 2: Demandes d'un utilisateur
+                try {
+                    const userResponse = await fetch(`${API_BASE}/api/access-requests/user/${TEST_USER.id}`);
+                    if (userResponse.ok) {
+                        const userData = await userResponse.json();
+                        results += `
+                            <div class="test-step">
+                                <strong>Demandes utilisateur:</strong> ${userData.length}
+                                <br><strong>Statut:</strong> ✅ Succès
+                            </div>
+                        `;
+                    } else {
+                        results += `
+                            <div class="test-step">
+                                <strong>Demandes utilisateur:</strong>
+                                <br><strong>Statut:</strong> ❌ Erreur ${userResponse.status}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    results += `
+                        <div class="test-step">
+                            <strong>Demandes utilisateur:</strong>
+                            <br><strong>Erreur:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Test de récupération des demandes terminé</div>
+                    ${results}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 4: Approbation/Rejet de Demandes
+        async function testApproveRejectRequests() {
+            const resultDiv = document.getElementById('result-approve-reject');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                // D'abord, créer une demande pour la tester
+                const createResponse = await fetch(`${API_BASE}/api/access-requests?requesterId=${TEST_USER.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reportId: TEST_REPORT.id,
+                        reportTitle: TEST_REPORT.title,
+                        requesterName: TEST_USER.name,
+                        requesterEmail: TEST_USER.email,
+                        requesterCompany: TEST_USER.company,
+                        reason: 'Test approbation/rejet'
+                    })
+                });
+
+                if (!createResponse.ok) {
+                    resultDiv.innerHTML = `<div class="error">❌ Impossible de créer une demande pour le test</div>`;
+                    return;
+                }
+
+                const createdRequest = await createResponse.json();
+                const requestId = createdRequest.id;
+
+                let results = '';
+
+                // Test 1: Approbation
+                try {
+                    const approveResponse = await fetch(`${API_BASE}/api/access-requests/${requestId}/approve?processedBy=admin`, {
+                        method: 'POST'
+                    });
+
+                    if (approveResponse.ok) {
+                        const approveData = await approveResponse.json();
+                        results += `
+                            <div class="test-step">
+                                <strong>Approbation:</strong> ✅ Succès
+                                <br><strong>Status:</strong> ${approveData.status}
+                                <br><strong>Code temporaire:</strong> ${approveData.temporaryCode || 'Non généré'}
+                                <br><strong>Expire le:</strong> ${approveData.expiresAt || 'Non défini'}
+                            </div>
+                        `;
+                    } else {
+                        results += `
+                            <div class="test-step">
+                                <strong>Approbation:</strong> ❌ Erreur ${approveResponse.status}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    results += `
+                        <div class="test-step">
+                            <strong>Approbation:</strong> ❌ Erreur: ${error.message}
+                        </div>
+                    `;
+                }
+
+                // Test 2: Rejet (créer une nouvelle demande)
+                try {
+                    const createResponse2 = await fetch(`${API_BASE}/api/access-requests?requesterId=${TEST_USER.id}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            reportId: TEST_REPORT.id,
+                            reportTitle: TEST_REPORT.title,
+                            requesterName: TEST_USER.name,
+                            requesterEmail: TEST_USER.email,
+                            requesterCompany: TEST_USER.company,
+                            reason: 'Test rejet'
+                        })
+                    });
+
+                    if (createResponse2.ok) {
+                        const createdRequest2 = await createResponse2.json();
+                        const requestId2 = createdRequest2.id;
+
+                        const rejectResponse = await fetch(`${API_BASE}/api/access-requests/${requestId2}/reject?processedBy=admin&rejectionReason=Test de rejet`, {
+                            method: 'POST'
+                        });
+
+                        if (rejectResponse.ok) {
+                            const rejectData = await rejectResponse.json();
+                            results += `
+                                <div class="test-step">
+                                    <strong>Rejet:</strong> ✅ Succès
+                                    <br><strong>Status:</strong> ${rejectData.status}
+                                    <br><strong>Raison:</strong> ${rejectData.rejectionReason || 'Non spécifiée'}
+                                </div>
+                            `;
+                        } else {
+                            results += `
+                                <div class="test-step">
+                                    <strong>Rejet:</strong> ❌ Erreur ${rejectResponse.status}
+                                </div>
+                            `;
+                        }
+                    }
+                } catch (error) {
+                    results += `
+                        <div class="test-step">
+                            <strong>Rejet:</strong> ❌ Erreur: ${error.message}
+                        </div>
+                    `;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Test d'approbation/rejet terminé</div>
+                    ${results}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 5: Vérification des Codes Valides
+        async function testCheckValidCode() {
+            const resultDiv = document.getElementById('result-check-code');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/download/check-valid-code/${TEST_USER.id}/${TEST_REPORT.id}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Vérification des codes terminée</div>
+                        <div class="code-display">
+                            HasValidCode: ${data.hasValidCode}
+                            Code: ${data.code || 'Aucun'}
+                            ExpiresAt: ${data.expiresAt || 'Non défini'}
+                            Message: ${data.message || 'Aucun message'}
+                        </div>
+                        <div class="info">
+                            📋 Résultats:
+                            <br>• Utilisateur: ${TEST_USER.id}
+                            <br>• Rapport: ${TEST_REPORT.id}
+                            <br>• Code valide: ${data.hasValidCode ? 'Oui' : 'Non'}
+                        </div>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Erreur lors de la vérification</div>
+                        <div class="code-display">Status: ${response.status}
+                        ${errorText}</div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

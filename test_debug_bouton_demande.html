@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Bouton Demande d'Accès</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-title {
+            color: #dc2626;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #dc2626;
+            padding-bottom: 5px;
+        }
+        .debug-step {
+            background: #fef2f2;
+            margin: 10px 0;
+            padding: 15px;
+            border-left: 4px solid #dc2626;
+            border-radius: 4px;
+        }
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        button {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #b91c1c;
+        }
+        .code-display {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .condition {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Bouton Demande d'Accès</h1>
+    
+    <div class="debug-section">
+        <div class="debug-title">🔍 Test 1: Vérification des Conditions d'Affichage</div>
+        <div class="debug-step">
+            <strong>Condition pour afficher le bouton "Demande d'accès":</strong>
+            <br>
+            <code>currentUser && createdBy && currentUser !== createdBy</code>
+            <br>
+            <button onclick="testConditions()">🔍 Tester les Conditions</button>
+            <div id="result-conditions"></div>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">👤 Test 2: Vérification de l'Utilisateur Actuel</div>
+        <div class="debug-step">
+            <strong>Informations sur l'utilisateur connecté:</strong>
+            <br>
+            <button onclick="testCurrentUser()">👤 Vérifier Utilisateur Actuel</button>
+            <div id="result-current-user"></div>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">📄 Test 3: Vérification des Rapports</div>
+        <div class="debug-step">
+            <strong>Liste des rapports et leurs propriétaires:</strong>
+            <br>
+            <button onclick="testReports()">📄 Vérifier les Rapports</button>
+            <div id="result-reports"></div>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">🔧 Test 4: Solutions de Correction</div>
+        <div class="debug-step">
+            <strong>Solutions pour forcer l'affichage du bouton:</strong>
+            <br>
+            <button onclick="testSolutions()">🔧 Proposer des Solutions</button>
+            <div id="result-solutions"></div>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">🧪 Test 5: Simulation du Workflow</div>
+        <div class="debug-step">
+            <strong>Simulation complète du workflow de demande d'accès:</strong>
+            <br>
+            <button onclick="testWorkflow()">🧪 Simuler le Workflow</button>
+            <div id="result-workflow"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        
+        // Test 1: Vérification des Conditions
+        function testConditions() {
+            const resultDiv = document.getElementById('result-conditions');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                // Simuler les valeurs typiques
+                const testCases = [
+                    {
+                        name: 'Utilisateur normal, rapport d\'un autre utilisateur',
+                        currentUser: 'John Doe',
+                        createdBy: 'Jane Smith',
+                        expected: true,
+                        description: 'Le bouton devrait apparaître'
+                    },
+                    {
+                        name: 'Utilisateur propriétaire de son rapport',
+                        currentUser: 'John Doe',
+                        createdBy: 'John Doe',
+                        expected: false,
+                        description: 'Le bouton ne devrait pas apparaître'
+                    },
+                    {
+                        name: 'Utilisateur non défini',
+                        currentUser: null,
+                        createdBy: 'Jane Smith',
+                        expected: false,
+                        description: 'Le bouton ne devrait pas apparaître'
+                    },
+                    {
+                        name: 'Rapport sans propriétaire',
+                        currentUser: 'John Doe',
+                        createdBy: null,
+                        expected: false,
+                        description: 'Le bouton ne devrait pas apparaître'
+                    }
+                ];
+
+                let results = '';
+                testCases.forEach(testCase => {
+                    const condition = testCase.currentUser && testCase.createdBy && testCase.currentUser !== testCase.createdBy;
+                    const isCorrect = condition === testCase.expected;
+                    
+                    results += `
+                        <div class="condition">
+                            <strong>${testCase.name}:</strong>
+                            <br>👤 Utilisateur actuel: ${testCase.currentUser || 'null'}
+                            <br>📄 Créé par: ${testCase.createdBy || 'null'}
+                            <br>🔍 Condition: ${testCase.currentUser && testCase.createdBy && testCase.currentUser !== testCase.createdBy ? 'true' : 'false'}
+                            <br>📝 ${testCase.description}
+                            <br>${isCorrect ? '✅ Correct' : '❌ Incorrect'}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Test des conditions terminé</div>
+                    ${results}
+                    <div class="info">
+                        💡 Le bouton "Demande d'accès" n'apparaît que si :
+                        <br>• L'utilisateur est connecté (currentUser existe)
+                        <br>• Le rapport a un propriétaire (createdBy existe)
+                        <br>• L'utilisateur n'est PAS le propriétaire (currentUser !== createdBy)
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 2: Vérification de l'Utilisateur Actuel
+        function testCurrentUser() {
+            const resultDiv = document.getElementById('result-current-user');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                // Simuler la récupération de l'utilisateur depuis localStorage
+                const userFromStorage = localStorage.getItem('user');
+                let user = null;
+                
+                if (userFromStorage) {
+                    try {
+                        user = JSON.parse(userFromStorage);
+                    } catch (e) {
+                        console.error('Erreur parsing user:', e);
+                    }
+                }
+
+                // Simuler l'utilisateur par défaut si aucun n'est trouvé
+                if (!user) {
+                    user = {
+                        name: 'Utilisateur Test',
+                        email: 'test@example.com',
+                        company: 'Company Test'
+                    };
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Informations utilisateur récupérées</div>
+                    <div class="code-display">
+                        Utilisateur actuel:
+                        ${JSON.stringify(user, null, 2)}
+                    </div>
+                    <div class="info">
+                        📋 Détails:
+                        <br>• Nom: ${user.name || 'Non défini'}
+                        <br>• Email: ${user.email || 'Non défini'}
+                        <br>• Compagnie: ${user.company || 'Non défini'}
+                        <br>• Source: ${userFromStorage ? 'localStorage' : 'Valeurs par défaut'}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 3: Vérification des Rapports
+        async function testReports() {
+            const resultDiv = document.getElementById('result-reports');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            try {
+                // Simuler des rapports de test
+                const testReports = [
+                    {
+                        id: 1,
+                        title: 'Rapport de Test 1',
+                        createdBy: 'John Doe',
+                        status: 'Disponible'
+                    },
+                    {
+                        id: 2,
+                        title: 'Rapport de Test 2',
+                        createdBy: 'Jane Smith',
+                        status: 'Disponible'
+                    },
+                    {
+                        id: 3,
+                        title: 'Rapport de Test 3',
+                        createdBy: null,
+                        status: 'Disponible'
+                    }
+                ];
+
+                const currentUser = 'John Doe'; // Simuler l'utilisateur actuel
+
+                let results = '';
+                testReports.forEach(report => {
+                    const shouldShowButton = currentUser && report.createdBy && currentUser !== report.createdBy;
+                    
+                    results += `
+                        <div class="condition">
+                            <strong>Rapport ${report.id}:</strong> ${report.title}
+                            <br>👤 Créé par: ${report.createdBy || 'Non défini'}
+                            <br>👤 Utilisateur actuel: ${currentUser}
+                            <br>🔍 Bouton "Demande d'accès": ${shouldShowButton ? '✅ Visible' : '❌ Masqué'}
+                            <br>📝 Raison: ${!report.createdBy ? 'Pas de propriétaire' : currentUser === report.createdBy ? 'Propriétaire du rapport' : 'Utilisateur différent'}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Analyse des rapports terminée</div>
+                    ${results}
+                    <div class="info">
+                        💡 Pour voir le bouton "Demande d'accès":
+                        <br>• Les rapports doivent avoir un propriétaire (createdBy)
+                        <br>• L'utilisateur actuel ne doit pas être le propriétaire
+                        <br>• L'utilisateur doit être connecté
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 4: Solutions de Correction
+        function testSolutions() {
+            const resultDiv = document.getElementById('result-solutions');
+            resultDiv.innerHTML = '<div class="info">Analyse en cours...</div>';
+
+            try {
+                const solutions = [
+                    {
+                        problem: 'Aucun utilisateur connecté',
+                        solution: 'Se connecter ou créer un utilisateur par défaut',
+                        code: `
+// Dans Reports.tsx, ajouter un utilisateur par défaut
+const defaultUser = {
+    name: 'Utilisateur Test',
+    email: 'test@example.com',
+    company: 'Company Test'
+};
+const currentUser = user.name || defaultUser.name;
+                        `
+                    },
+                    {
+                        problem: 'Rapports sans propriétaire (createdBy = null)',
+                        solution: 'Attribuer un propriétaire aux rapports existants',
+                        code: `
+// Mettre à jour les rapports existants
+UPDATE reports SET created_by = 'Admin User' WHERE created_by IS NULL;
+                        `
+                    },
+                    {
+                        problem: 'Utilisateur propriétaire de tous les rapports',
+                        solution: 'Créer des rapports avec différents propriétaires',
+                        code: `
+// Créer des rapports de test avec différents propriétaires
+const testReports = [
+    { title: 'Rapport Admin', createdBy: 'Admin User' },
+    { title: 'Rapport Manager', createdBy: 'Manager User' },
+    { title: 'Rapport Analyst', createdBy: 'Analyst User' }
+];
+                        `
+                    },
+                    {
+                        problem: 'Condition trop restrictive',
+                        solution: 'Modifier temporairement la condition pour les tests',
+                        code: `
+// Dans ReportCard.tsx, modifier temporairement
+{/* Version de test - toujours afficher le bouton */}
+<Button intent="secondary" onClick={onRequestAccess}>🔐 Demande d'accès</Button>
+
+{/* Version finale - condition normale */}
+{currentUser && createdBy && currentUser !== createdBy ? (
+    <Button intent="secondary" onClick={onRequestAccess}>🔐 Demande d'accès</Button>
+) : (
+    <Button intent={unavailable ? 'secondary' : 'primary'} disabled={unavailable} onClick={onDownload}>Télécharger</Button>
+)}
+                        `
+                    }
+                ];
+
+                let solutionsHtml = '';
+                solutions.forEach((sol, index) => {
+                    solutionsHtml += `
+                        <div class="condition">
+                            <strong>Solution ${index + 1}:</strong> ${sol.problem}
+                            <br>🔧 ${sol.solution}
+                            <div class="code-display">${sol.code}</div>
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Solutions identifiées</div>
+                    ${solutionsHtml}
+                    <div class="info">
+                        🎯 Recommandations:
+                        <br>• Vérifier que l'utilisateur est connecté
+                        <br>• S'assurer que les rapports ont des propriétaires
+                        <br>• Créer des rapports avec différents propriétaires
+                        <br>• Tester avec des utilisateurs différents
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        // Test 5: Simulation du Workflow
+        function testWorkflow() {
+            const resultDiv = document.getElementById('result-workflow');
+            resultDiv.innerHTML = '<div class="info">Simulation en cours...</div>';
+
+            try {
+                const workflowSteps = [
+                    {
+                        step: 1,
+                        action: 'Vérifier l\'utilisateur connecté',
+                        status: 'completed',
+                        details: 'Utilisateur: John Doe'
+                    },
+                    {
+                        step: 2,
+                        action: 'Identifier les rapports d\'autres utilisateurs',
+                        status: 'completed',
+                        details: 'Rapport créé par: Jane Smith'
+                    },
+                    {
+                        step: 3,
+                        action: 'Afficher le bouton "Demande d\'accès"',
+                        status: 'completed',
+                        details: 'Condition: currentUser !== createdBy ✅'
+                    },
+                    {
+                        step: 4,
+                        action: 'Clic sur le bouton',
+                        status: 'pending',
+                        details: 'Ouvre le modal de demande'
+                    },
+                    {
+                        step: 5,
+                        action: 'Remplir le formulaire',
+                        status: 'pending',
+                        details: 'Email, compagnie, téléphone, motif'
+                    },
+                    {
+                        step: 6,
+                        action: 'Soumettre la demande',
+                        status: 'pending',
+                        details: 'Création en base de données'
+                    },
+                    {
+                        step: 7,
+                        action: 'Notification admin',
+                        status: 'pending',
+                        details: 'Admin reçoit la notification'
+                    },
+                    {
+                        step: 8,
+                        action: 'Approbation admin',
+                        status: 'pending',
+                        details: 'Génération du code temporaire'
+                    },
+                    {
+                        step: 9,
+                        action: 'Notification utilisateur',
+                        status: 'pending',
+                        details: 'Réception du code par email/SMS'
+                    },
+                    {
+                        step: 10,
+                        action: 'Téléchargement',
+                        status: 'pending',
+                        details: 'Validation du code et téléchargement'
+                    }
+                ];
+
+                let workflowHtml = '';
+                workflowSteps.forEach(step => {
+                    const statusClass = step.status === 'completed' ? 'success' : step.status === 'pending' ? 'info' : 'error';
+                    workflowHtml += `
+                        <div class="condition">
+                            <strong>Étape ${step.step}:</strong> ${step.action}
+                            <br>📊 Statut: ${step.status === 'completed' ? '✅ Terminé' : step.status === 'pending' ? '⏳ En attente' : '❌ Échec'}
+                            <br>📝 ${step.details}
+                        </div>
+                    `;
+                });
+
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Simulation du workflow terminée</div>
+                    ${workflowHtml}
+                    <div class="info">
+                        🎯 Workflow complet:
+                        <br>• Les étapes 1-3 sont automatiques (interface)
+                        <br>• Les étapes 4-6 sont manuelles (utilisateur)
+                        <br>• Les étapes 7-8 sont administratives
+                        <br>• Les étapes 9-10 sont automatiques (notifications)
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

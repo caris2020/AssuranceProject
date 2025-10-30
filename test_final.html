@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Final - Corrections Déployées</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .result { margin: 15px 0; padding: 15px; border-radius: 8px; border-left: 4px solid; }
+        .success { background-color: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .warning { background-color: #fff3cd; border-color: #ffc107; color: #856404; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .progress-bar { width: 100%; background-color: #e9ecef; border-radius: 5px; height: 25px; margin: 10px 0; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .status-active { background-color: #28a745; color: white; }
+        .status-expired { background-color: #dc3545; color: white; }
+        .status-future { background-color: #17a2b8; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Final - Corrections Déployées</h1>
+        <p>Ce test vérifie si les corrections de l'incohérence des jours restants sont maintenant actives.</p>
+        
+        <button onclick="runTest()">🚀 Lancer le Test</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function runTest() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="result info">🔄 Test en cours...</div>';
+
+            try {
+                // Test de connexion
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'octavio',
+                        insuranceCompany: 'Test Company',
+                        password: 'password123'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+
+                const userData = await response.json();
+                
+                // Analyse des données
+                const startDate = new Date(userData.subscriptionStartDate);
+                const endDate = new Date(userData.subscriptionEndDate);
+                const now = new Date();
+                const daysUntilExpiration = userData.daysUntilExpiration;
+
+                // Calcul de la logique attendue
+                let expectedDays, expectedStatus, expectedMessage;
+                
+                if (now < startDate) {
+                    expectedDays = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    expectedStatus = 'future';
+                    expectedMessage = `L'abonnement commence dans ${expectedDays} jours`;
+                } else if (now > endDate) {
+                    expectedDays = 0;
+                    expectedStatus = 'expired';
+                    expectedMessage = 'L\'abonnement est expiré';
+                } else {
+                    expectedDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    expectedStatus = 'active';
+                    expectedMessage = `L'abonnement expire dans ${expectedDays} jours`;
+                }
+
+                const isCorrect = daysUntilExpiration === expectedDays;
+                const daysDiff = Math.abs(daysUntilExpiration - expectedDays);
+
+                // Affichage des résultats
+                let html = `
+                    <div class="result info">
+                        <h3>📊 Données de l'API</h3>
+                        <p><strong>Date de début:</strong> ${startDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date de fin:</strong> ${endDate.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Date actuelle:</strong> ${now.toLocaleDateString('fr-FR')}</p>
+                        <p><strong>Jours restants (API):</strong> <span style="font-weight: bold; font-size: 18px;">${daysUntilExpiration}</span></p>
+                        <p><strong>Statut API:</strong> <span class="status-badge status-${userData.subscriptionStatus?.toLowerCase() || 'active'}">${userData.subscriptionStatus || 'ACTIVE'}</span></p>
+                    </div>
+                `;
+
+                html += `
+                    <div class="result ${isCorrect ? 'success' : 'error'}">
+                        <h3>${isCorrect ? '✅ SUCCÈS' : '❌ ÉCHEC'}</h3>
+                        <p><strong>Résultat:</strong> ${isCorrect ? 'Les corrections sont déployées et fonctionnent !' : 'Les corrections ne sont pas encore actives.'}</p>
+                        <p><strong>API retourne:</strong> ${daysUntilExpiration} jours</p>
+                        <p><strong>Attendu:</strong> ${expectedDays} jours</p>
+                        ${!isCorrect ? `<p><strong>Différence:</strong> ${daysDiff} jours</p>` : ''}
+                    </div>
+                `;
+
+                // Calcul de la barre de progression
+                let progressPercentage;
+                if (expectedStatus === 'future') {
+                    progressPercentage = 0;
+                } else if (expectedStatus === 'expired') {
+                    progressPercentage = 100;
+                } else {
+                    const totalDuration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                    const elapsedTime = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                    progressPercentage = Math.min(100, Math.max(0, (elapsedTime / totalDuration) * 100));
+                }
+
+                html += `
+                    <div class="result info">
+                        <h3>📈 Barre de Progression (Attendue)</h3>
+                        <p><strong>Statut attendu:</strong> <span class="status-badge status-${expectedStatus}">${expectedStatus.toUpperCase()}</span></p>
+                        <p><strong>Message attendu:</strong> ${expectedMessage}</p>
+                        <p><strong>Pourcentage écoulé:</strong> ${Math.round(progressPercentage)}%</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progressPercentage}%; background-color: ${progressPercentage >= 100 ? '#dc3545' : progressPercentage >= 80 ? '#ffc107' : '#28a745'};"></div>
+                        </div>
+                    </div>
+                `;
+
+                if (isCorrect) {
+                    html += `
+                        <div class="result success">
+                            <h3>🎉 Problème Résolu !</h3>
+                            <p><strong>Félicitations !</strong> Les corrections sont maintenant déployées et fonctionnent correctement.</p>
+                            <p><strong>Prochaines étapes:</strong></p>
+                            <ul>
+                                <li>Ouvrir l'application en mode incognito</li>
+                                <li>Se connecter avec l'utilisateur octavio</li>
+                                <li>Vérifier que l'interface affiche maintenant "Commence dans X jours"</li>
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="result error">
+                            <h3>⚠️ Problème Persistant</h3>
+                            <p><strong>Les corrections ne sont pas encore actives.</strong></p>
+                            <p><strong>Actions à effectuer:</strong></p>
+                            <ul>
+                                <li>Vérifier que le backend a bien redémarré</li>
+                                <li>Attendre quelques minutes que le système se stabilise</li>
+                                <li>Relancer ce test</li>
+                                <li>Vérifier les logs du backend</li>
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                resultsDiv.innerHTML = html;
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Erreur de Test</h3>
+                        <p><strong>Erreur:</strong> ${error.message}</p>
+                        <p><strong>Vérifiez que:</strong></p>
+                        <ul>
+                            <li>Le backend est démarré sur http://localhost:8080</li>
+                            <li>L'utilisateur 'octavio' existe avec le mot de passe 'password123'</li>
+                            <li>Il n'y a pas de problème de CORS</li>
+                        </ul>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

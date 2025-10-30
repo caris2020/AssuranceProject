@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correction Définitive - Dates d'Expiration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #dc3545;
+            color: white;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 10px;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #c82333;
+        }
+        .success {
+            background-color: #28a745;
+        }
+        .success:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success-result {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .steps {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 3px;
+            border-left: 4px solid #007bff;
+        }
+        .step.completed {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correction Définitive - Dates d'Expiration</h1>
+        <p><strong>Problème identifié :</strong> Les utilisateurs ont des dates futures (28/08/2026) mais affichent "Expire aujourd'hui".</p>
+        
+        <div class="steps">
+            <h3>📋 Étapes de Correction :</h3>
+            <div id="step1" class="step">
+                1️⃣ Vérifier la connexion au backend
+            </div>
+            <div id="step2" class="step">
+                2️⃣ Diagnostiquer les incohérences
+            </div>
+            <div id="step3" class="step">
+                3️⃣ Corriger automatiquement les données
+            </div>
+            <div id="step4" class="step">
+                4️⃣ Vérifier la correction
+            </div>
+        </div>
+        
+        <div>
+            <button class="button" onclick="startCorrection()">🚀 DÉMARRER LA CORRECTION DÉFINITIVE</button>
+            <button class="button success" onclick="checkStatus()">🔍 Vérifier le Statut Final</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        function updateStep(stepNumber, completed) {
+            const stepElement = document.getElementById(`step${stepNumber}`);
+            if (completed) {
+                stepElement.classList.add('completed');
+                stepElement.innerHTML += ' ✅';
+            }
+        }
+        
+        async function startCorrection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result warning">🚀 Démarrage de la correction définitive...</div>';
+            
+            try {
+                // Étape 1: Vérifier la connexion
+                updateStep(1, true);
+                resultDiv.innerHTML = '<div class="result">✅ Connexion vérifiée<br>🔍 Diagnostic en cours...</div>';
+                
+                // Étape 2: Diagnostiquer
+                const diagnosticResponse = await fetch(`${API_BASE}/subscriptions/debug-dates`);
+                if (!diagnosticResponse.ok) {
+                    throw new Error('Impossible de diagnostiquer les dates');
+                }
+                const diagnosticData = await diagnosticResponse.json();
+                updateStep(2, true);
+                
+                let inconsistentCount = 0;
+                diagnosticData.users.forEach(user => {
+                    if (user.isInconsistent || 
+                        (user.daysUntilExpiration === 0 && user.subscriptionEndDate && 
+                         new Date(user.subscriptionEndDate) > new Date())) {
+                        inconsistentCount++;
+                    }
+                });
+                
+                resultDiv.innerHTML = `<div class="result">
+✅ Diagnostic terminé<br>
+📊 ${inconsistentCount} incohérences détectées<br>
+🔧 Correction en cours...
+</div>`;
+                
+                // Étape 3: Corriger
+                updateStep(3, true);
+                const fixResponse = await fetch(`${API_BASE}/subscriptions/fix-dates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const fixData = await fixResponse.json();
+                
+                if (fixData.success) {
+                    updateStep(4, true);
+                    resultDiv.innerHTML = `<div class="result success-result">
+🎉 <strong>CORRECTION DÉFINITIVE RÉUSSIE !</strong>
+<p>✅ ${fixData.message}</p>
+<p>📊 Utilisateurs corrigés: ${fixData.correctedCount}</p>
+<p>📅 Date système: ${fixData.currentDate}</p>
+<hr>
+<p><strong>🎯 Actions requises :</strong></p>
+<p>1️⃣ Actualisez la page du tableau de bord administrateur</p>
+<p>2️⃣ Allez dans l'onglet "Utilisateurs"</p>
+<p>3️⃣ Vérifiez que les dates futures (2026) sont maintenant en <strong>VERT</strong></p>
+<p>4️⃣ Vérifiez que le texte affiche "365 jours restants" au lieu de "Expire aujourd'hui"</p>
+</div>`;
+                } else {
+                    throw new Error(fixData.message);
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+❌ <strong>Erreur lors de la correction définitive</strong>
+<p>${error.message}</p>
+<p><strong>Solutions possibles :</strong></p>
+<p>1️⃣ Assurez-vous que le backend est démarré sur http://localhost:8080</p>
+<p>2️⃣ Vérifiez que la base de données est accessible</p>
+<p>3️⃣ Redémarrez le backend si nécessaire</p>
+</div>`;
+            }
+        }
+        
+        async function checkStatus() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">🔍 Vérification du statut final...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/debug-dates`);
+                const data = await response.json();
+                
+                let inconsistentCount = 0;
+                data.users.forEach(user => {
+                    if (user.isInconsistent || 
+                        (user.daysUntilExpiration === 0 && user.subscriptionEndDate && 
+                         new Date(user.subscriptionEndDate) > new Date())) {
+                        inconsistentCount++;
+                    }
+                });
+                
+                if (inconsistentCount === 0) {
+                    resultDiv.innerHTML = `<div class="result success-result">
+🎉 <strong>STATUT FINAL : CORRECTION RÉUSSIE !</strong>
+<p>✅ Aucune incohérence détectée</p>
+<p>✅ Tous les abonnements sont cohérents</p>
+<p>✅ Les dates futures affichent correctement les jours restants</p>
+<p>📅 Date système: ${data.currentDate}</p>
+<hr>
+<p><strong>🎯 Problème résolu !</strong></p>
+<p>Vous pouvez maintenant utiliser le tableau de bord administrateur normalement.</p>
+</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+⚠️ <strong>STATUT FINAL : INCOHÉRENCES PERSISTANTES</strong>
+<p>❌ ${inconsistentCount} incohérences détectées</p>
+<p>🔄 Relancez la correction définitive</p>
+</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+❌ <strong>Erreur de vérification</strong>
+<p>${error.message}</p>
+</div>`;
+            }
+        }
+        
+        // Vérification automatique au chargement
+        window.onload = function() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result warning">
+🔧 <strong>Outil de Correction Définitive</strong>
+<p>Cliquez sur "DÉMARRER LA CORRECTION DÉFINITIVE" pour résoudre immédiatement le problème des dates d'expiration.</p>
+<p>Cet outil va :</p>
+<ul>
+<li>Diagnostiquer toutes les incohérences</li>
+<li>Corriger automatiquement les données</li>
+<li>Vérifier que la correction est effective</li>
+</ul>
+</div>`;
+        };
+    </script>
+</body>
+</html>

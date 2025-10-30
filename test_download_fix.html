@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Téléchargement - Correction</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        .result { margin-top: 10px; padding: 10px; background-color: #f8f9fa; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test de Correction du Système de Téléchargement</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Informations sur la correction</h3>
+        <p><strong>Problème identifié :</strong> Incohérence entre frontend et backend pour la génération des codes d'accès</p>
+        <ul>
+            <li><strong>Frontend :</strong> Génère le code basé sur l'ID du rapport (CODE000001)</li>
+            <li><strong>Backend (avant correction) :</strong> Génère le code basé sur l'ID du fichier (CODE000002)</li>
+            <li><strong>Backend (après correction) :</strong> Génère le code basé sur l'ID du rapport (CODE000001)</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Test 1 : Validation du Code d'Accès</h3>
+        <p>Test de l'endpoint de validation avec un code généré basé sur l'ID du rapport</p>
+        
+        <label>ID du Rapport: <input type="number" id="reportId" value="1" min="1"></label><br>
+        <label>Code d'Accès: <input type="text" id="accessCode" placeholder="Ex: CODE000001"></label><br>
+        
+        <button onclick="testCodeValidation()">Tester la Validation</button>
+        <button onclick="generateCode()">Générer le Code</button>
+        
+        <div id="validationResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📥 Test 2 : Téléchargement Sécurisé</h3>
+        <p>Test du téléchargement avec validation du code d'accès</p>
+        
+        <label>ID du Rapport: <input type="number" id="downloadReportId" value="1" min="1"></label><br>
+        <label>Nom de l'Utilisateur: <input type="text" id="requesterName" value="testuser"></label><br>
+        <label>Code d'Accès: <input type="text" id="downloadCode" placeholder="Ex: CODE000001"></label><br>
+        
+        <button onclick="testSecureDownload()">Tester le Téléchargement</button>
+        <button onclick="testDemoDownload()">Tester Téléchargement Demo (sans code)</button>
+        
+        <div id="downloadResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Test 3 : Récupération des Fichiers avec Codes</h3>
+        <p>Test de récupération des fichiers d'un rapport avec leurs codes d'accès</p>
+        
+        <label>ID du Rapport: <input type="number" id="filesReportId" value="1" min="1"></label><br>
+        <label>Nom de l'Utilisateur: <input type="text" id="filesRequesterName" value="admin"></label><br>
+        
+        <button onclick="testGetFilesWithCodes()">Récupérer les Fichiers</button>
+        
+        <div id="filesResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        function generateCode() {
+            const reportId = document.getElementById('reportId').value;
+            const code = `CODE${reportId.toString().padStart(6, '0')}`;
+            document.getElementById('accessCode').value = code;
+        }
+
+        async function testCodeValidation() {
+            const reportId = document.getElementById('reportId').value;
+            const code = document.getElementById('accessCode').value;
+            const resultDiv = document.getElementById('validationResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: parseInt(reportId), code: code })
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.style.display = 'block';
+                if (data.valid) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Validation réussie</h4>
+                        <p><strong>Code fourni:</strong> ${code}</p>
+                        <p><strong>Code attendu:</strong> ${data.expectedCode}</p>
+                        <p><strong>Type d'ID:</strong> ${data.idType}</p>
+                        <p><strong>ID utilisé:</strong> ${data.id}</p>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Validation échouée</h4>
+                        <p><strong>Code fourni:</strong> ${code}</p>
+                        <p><strong>Code attendu:</strong> ${data.expectedCode}</p>
+                        <p><strong>Erreur:</strong> ${data.error || 'Code invalide'}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testSecureDownload() {
+            const reportId = document.getElementById('downloadReportId').value;
+            const requesterName = document.getElementById('requesterName').value;
+            const code = document.getElementById('downloadCode').value;
+            const resultDiv = document.getElementById('downloadResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/download/${reportId}?requesterName=${encodeURIComponent(requesterName)}&code=${encodeURIComponent(code)}`);
+                
+                resultDiv.style.display = 'block';
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Téléchargement réussi</h4>
+                        <p>Le fichier devrait se télécharger automatiquement.</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Content-Type:</strong> ${response.headers.get('content-type')}</p>
+                    `;
+                    
+                    // Déclencher le téléchargement
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rapport_${reportId}.bin`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Téléchargement échoué</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testDemoDownload() {
+            const reportId = document.getElementById('downloadReportId').value;
+            const requesterName = document.getElementById('requesterName').value;
+            const resultDiv = document.getElementById('downloadResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/download/demo/${reportId}?requesterName=${encodeURIComponent(requesterName)}`);
+                
+                resultDiv.style.display = 'block';
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Téléchargement Demo réussi</h4>
+                        <p>Le fichier devrait se télécharger automatiquement (sans validation de code).</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Content-Type:</strong> ${response.headers.get('content-type')}</p>
+                    `;
+                    
+                    // Déclencher le téléchargement
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rapport_demo_${reportId}.bin`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Téléchargement Demo échoué</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+            }
+        }
+
+        async function testGetFilesWithCodes() {
+            const reportId = document.getElementById('filesReportId').value;
+            const requesterName = document.getElementById('filesRequesterName').value;
+            const resultDiv = document.getElementById('filesResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/download/files/${reportId}?requesterName=${encodeURIComponent(requesterName)}`);
+                
+                resultDiv.style.display = 'block';
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Fichiers récupérés avec succès</h4>
+                        <p><strong>Nombre de fichiers:</strong> ${data.length}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Échec de récupération des fichiers</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+            }
+        }
+
+        // Générer automatiquement le code au chargement
+        window.onload = function() {
+            generateCode();
+        };
+    </script>
+</body>
+</html>

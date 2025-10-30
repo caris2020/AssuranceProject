@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Numéros de Dossier</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .report-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .case-number { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Test des Numéros de Dossier dans les Rapports</h1>
+    
+    <div class="test-section info">
+        <h3>Instructions</h3>
+        <p>Ce test vérifie que les numéros de dossier sont bien présents dans les rapports après la recréation des données de test.</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des données backend</h3>
+        <button onclick="testBackendData()">Vérifier les données backend</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des cartes de rapport</h3>
+        <button onclick="simulateReportCards()">Simuler les cartes de rapport</button>
+        <div id="cards-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        async function testBackendData() {
+            const resultDiv = document.getElementById('backend-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                // Test des rapports
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                // Test des dossiers
+                const casesResponse = await fetch(`${API_BASE}/api/cases`);
+                const cases = await casesResponse.json();
+                
+                let html = '<div class="success">';
+                html += `<h4>✅ Données backend chargées avec succès</h4>`;
+                html += `<p><strong>Rapports:</strong> ${reports.length} trouvés</p>`;
+                html += `<p><strong>Dossiers:</strong> ${cases.length} trouvés</p>`;
+                
+                html += '<h5>Détail des rapports:</h5>';
+                reports.forEach((r, index) => {
+                    html += `<div class="report-card">`;
+                    html += `<h4>Rapport ${index + 1}: ${r.title}</h4>`;
+                    html += `<p><strong>ID:</strong> ${r.id}</p>`;
+                    html += `<p><strong>CaseId:</strong> <span class="case-number">${r.caseId || 'AUCUN'}</span></p>`;
+                    html += `<p><strong>Bénéficiaire:</strong> ${r.beneficiary || 'Non défini'}</p>`;
+                    html += `<p><strong>Initiateur:</strong> ${r.initiator || 'Non défini'}</p>`;
+                    html += `<p><strong>Statut:</strong> ${r.status}</p>`;
+                    html += `</div>`;
+                });
+                
+                html += '<h5>Détail des dossiers:</h5>';
+                cases.forEach((c, index) => {
+                    html += `<div class="report-card">`;
+                    html += `<h4>Dossier ${index + 1}: ${c.reference}</h4>`;
+                    html += `<p><strong>ID:</strong> ${c.id}</p>`;
+                    html += `<p><strong>Type:</strong> ${c.type}</p>`;
+                    html += `<p><strong>Statut:</strong> ${c.status}</p>`;
+                    html += `</div>`;
+                });
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors du chargement des données</h4><p>${error.message}</p></div>`;
+            }
+        }
+
+        function simulateReportCards() {
+            const resultDiv = document.getElementById('cards-result');
+            
+            // Simuler l'affichage des cartes de rapport comme dans l'application
+            const mockReports = [
+                {
+                    title: "Suspicion multi‑contrats",
+                    caseId: "Z60TFMIXUS",
+                    beneficiary: "Kouadio Akissi",
+                    initiator: "Service Fraude Axa",
+                    insured: "N'Guessan Koffi",
+                    subscriber: "SAHAM Assurances",
+                    status: "Disponible"
+                },
+                {
+                    title: "Analyse sinistre #A-238",
+                    caseId: "A238ANALYSE",
+                    beneficiary: "Koné Mariam",
+                    initiator: "Allianz",
+                    insured: "Tra Bi Yao",
+                    subscriber: "NSIA",
+                    status: "En attente"
+                },
+                {
+                    title: "Vérification identité",
+                    caseId: "VERIFID001",
+                    beneficiary: "Zoumana Fofana",
+                    initiator: "SUNU",
+                    insured: "Kaba Amadou",
+                    subscriber: "SUNU Vie",
+                    status: "Traité"
+                },
+                {
+                    title: "Score risque assuré",
+                    caseId: "SCORE001",
+                    beneficiary: "Adjoba Aya",
+                    initiator: "AXA",
+                    insured: "Bamba Oumar",
+                    subscriber: "AXA",
+                    status: "Disponible"
+                }
+            ];
+            
+            let html = '<div class="success">';
+            html += '<h4>🎴 Simulation des cartes de rapport</h4>';
+            html += '<p>Voici comment les cartes de rapport devraient s\'afficher avec les numéros de dossier :</p>';
+            
+            mockReports.forEach((report, index) => {
+                html += `<div class="report-card">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                html += `<div style="height: 40px; width: 40px; background: #f0f9ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">📄</div>`;
+                html += `<button style="background: none; border: none; font-size: 18px;">☆</button>`;
+                html += `</div>`;
+                html += `<h3 style="margin-top: 12px; font-weight: 600;">${report.title}</h3>`;
+                html += `<p style="font-size: 14px; color: #64748b;">Créé le 22/08/2025</p>`;
+                if (report.caseId) {
+                    html += `<p style="font-size: 12px; color: #64748b;">Dossier: <span style="font-family: monospace; background: #e3f2fd; padding: 2px 4px; border-radius: 3px;">${report.caseId}</span></p>`;
+                }
+                html += `<div style="margin-top: 16px; font-size: 14px;">`;
+                html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>👤 Bénéficiaire:</span><span style="font-weight: 500;">${report.beneficiary}</span></div>`;
+                html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>📝 Initiateur:</span><span style="font-weight: 500;">${report.initiator}</span></div>`;
+                html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>🏥 Assuré:</span><span style="font-weight: 500;">${report.insured}</span></div>`;
+                html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>📋 Souscripteur:</span><span style="font-weight: 500;">${report.subscriber}</span></div>`;
+                html += `</div>`;
+                html += `<div style="margin-top: 12px;">`;
+                const badgeColor = report.status === 'Disponible' ? '#fef3c7' : report.status === 'En attente' ? '#fef3c7' : '#d1fae5';
+                const textColor = report.status === 'Disponible' ? '#92400e' : report.status === 'En attente' ? '#92400e' : '#065f46';
+                html += `<span style="background: ${badgeColor}; color: ${textColor}; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${report.status}</span>`;
+                html += `</div>`;
+                html += `<div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">`;
+                html += `<button style="padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: white;">Prévisualiser</button>`;
+                html += `<button style="padding: 8px; border: none; border-radius: 6px; background: #3b82f6; color: white;">Télécharger</button>`;
+                html += `</div>`;
+                html += `</div>`;
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

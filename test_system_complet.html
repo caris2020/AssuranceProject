@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Complet - Système de Téléchargement</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: white; }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .info { border-left: 4px solid #17a2b8; }
+        .warning { border-left: 4px solid #ffc107; }
+        button { padding: 12px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        input, select { padding: 10px; margin: 5px; width: 200px; border: 1px solid #ddd; border-radius: 4px; }
+        .result { margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d; }
+        .result.success { background-color: #d4edda; border-color: #28a745; }
+        .result.error { background-color: #f8d7da; border-color: #dc3545; }
+        .result.info { background-color: #d1ecf1; border-color: #17a2b8; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-success { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-warning { background-color: #ffc107; }
+        .status-info { background-color: #17a2b8; }
+        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .log { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; margin-top: 10px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Complet - Système de Téléchargement</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Vue d'ensemble du système</h3>
+            <p>Ce test valide l'ensemble du système de téléchargement après les corrections apportées :</p>
+            <ul>
+                <li><strong>✅ Correction appliquée :</strong> Cohérence entre frontend et backend pour les codes d'accès</li>
+                <li><strong>🔐 Téléchargement sécurisé :</strong> Validation des codes d'accès</li>
+                <li><strong>📁 Gestion des fichiers :</strong> Upload, téléchargement et suppression</li>
+                <li><strong>👥 Gestion des permissions :</strong> Accès basé sur les rôles</li>
+            </ul>
+        </div>
+
+        <div class="test-grid">
+            <!-- Test 1: Validation des codes d'accès -->
+            <div class="test-section">
+                <h3>🔐 Test 1: Validation des Codes d'Accès</h3>
+                <p>Test de la cohérence entre frontend et backend</p>
+                
+                <label>ID du Rapport: <input type="number" id="test1ReportId" value="1" min="1"></label><br>
+                <label>Code d'Accès: <input type="text" id="test1Code" placeholder="Ex: CODE000001"></label><br>
+                
+                <button class="btn-primary" onclick="testCodeValidation()">Tester la Validation</button>
+                <button class="btn-success" onclick="generateTestCode()">Générer le Code</button>
+                
+                <div id="test1Result" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Test 2: Téléchargement sécurisé -->
+            <div class="test-section">
+                <h3>📥 Test 2: Téléchargement Sécurisé</h3>
+                <p>Test du téléchargement avec validation du code</p>
+                
+                <label>ID du Rapport: <input type="number" id="test2ReportId" value="1" min="1"></label><br>
+                <label>Utilisateur: <input type="text" id="test2User" value="testuser"></label><br>
+                <label>Code d'Accès: <input type="text" id="test2Code" placeholder="Ex: CODE000001"></label><br>
+                
+                <button class="btn-primary" onclick="testSecureDownload()">Téléchargement Sécurisé</button>
+                <button class="btn-warning" onclick="testDemoDownload()">Téléchargement Demo</button>
+                
+                <div id="test2Result" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Test 3: Gestion des fichiers -->
+            <div class="test-section">
+                <h3>📁 Test 3: Gestion des Fichiers</h3>
+                <p>Test de récupération des fichiers avec codes d'accès</p>
+                
+                <label>ID du Rapport: <input type="number" id="test3ReportId" value="1" min="1"></label><br>
+                <label>Utilisateur: <input type="text" id="test3User" value="admin"></label><br>
+                
+                <button class="btn-primary" onclick="testFileManagement()">Récupérer les Fichiers</button>
+                <button class="btn-success" onclick="testFileUpload()">Tester Upload</button>
+                
+                <div id="test3Result" class="result" style="display: none;"></div>
+            </div>
+
+            <!-- Test 4: Test de stress -->
+            <div class="test-section">
+                <h3>⚡ Test 4: Test de Stress</h3>
+                <p>Test de multiples validations et téléchargements</p>
+                
+                <label>Nombre de tests: <input type="number" id="test4Count" value="5" min="1" max="20"></label><br>
+                <label>ID du Rapport: <input type="number" id="test4ReportId" value="1" min="1"></label><br>
+                
+                <button class="btn-primary" onclick="testStressValidation()">Test Validation Multiple</button>
+                <button class="btn-warning" onclick="testStressDownload()">Test Téléchargement Multiple</button>
+                
+                <div id="test4Result" class="result" style="display: none;"></div>
+                <div id="test4Log" class="log" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Résumé des tests -->
+        <div class="test-section">
+            <h3>📊 Résumé des Tests</h3>
+            <div id="testSummary">
+                <p><span class="status-indicator status-info"></span>Tests non exécutés</p>
+            </div>
+            <button class="btn-success" onclick="runAllTests()">🚀 Exécuter Tous les Tests</button>
+            <button class="btn-danger" onclick="clearResults()">🗑️ Effacer les Résultats</button>
+        </div>
+
+        <!-- Log des erreurs -->
+        <div class="test-section">
+            <h3>📝 Log des Erreurs</h3>
+            <div id="errorLog" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let testResults = {
+            codeValidation: { success: 0, total: 0 },
+            secureDownload: { success: 0, total: 0 },
+            fileManagement: { success: 0, total: 0 },
+            stressTest: { success: 0, total: 0 }
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('errorLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#6c757d';
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function generateTestCode() {
+            const reportId = document.getElementById('test1ReportId').value;
+            const code = `CODE${reportId.toString().padStart(6, '0')}`;
+            document.getElementById('test1Code').value = code;
+            log(`Code généré pour le rapport ${reportId}: ${code}`, 'success');
+        }
+
+        async function testCodeValidation() {
+            const reportId = document.getElementById('test1ReportId').value;
+            const code = document.getElementById('test1Code').value;
+            const resultDiv = document.getElementById('test1Result');
+            
+            try {
+                log(`Test de validation du code ${code} pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: parseInt(reportId), code: code })
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.style.display = 'block';
+                testResults.codeValidation.total++;
+                
+                if (data.valid) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Validation réussie</h4>
+                        <p><strong>Code fourni:</strong> ${code}</p>
+                        <p><strong>Code attendu:</strong> ${data.expectedCode}</p>
+                        <p><strong>Type d'ID:</strong> ${data.idType}</p>
+                        <p><strong>ID utilisé:</strong> ${data.id}</p>
+                    `;
+                    testResults.codeValidation.success++;
+                    log(`Validation réussie pour le code ${code}`, 'success');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Validation échouée</h4>
+                        <p><strong>Code fourni:</strong> ${code}</p>
+                        <p><strong>Code attendu:</strong> ${data.expectedCode}</p>
+                        <p><strong>Erreur:</strong> ${data.error || 'Code invalide'}</p>
+                    `;
+                    log(`Validation échouée pour le code ${code}: ${data.error}`, 'error');
+                }
+                
+                updateTestSummary();
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors de la validation: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSecureDownload() {
+            const reportId = document.getElementById('test2ReportId').value;
+            const requesterName = document.getElementById('test2User').value;
+            const code = document.getElementById('test2Code').value;
+            const resultDiv = document.getElementById('test2Result');
+            
+            try {
+                log(`Test de téléchargement sécurisé pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/${reportId}?requesterName=${encodeURIComponent(requesterName)}&code=${encodeURIComponent(code)}`);
+                
+                resultDiv.style.display = 'block';
+                testResults.secureDownload.total++;
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Téléchargement sécurisé réussi</h4>
+                        <p>Le fichier devrait se télécharger automatiquement.</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Content-Type:</strong> ${response.headers.get('content-type')}</p>
+                    `;
+                    testResults.secureDownload.success++;
+                    log(`Téléchargement sécurisé réussi pour le rapport ${reportId}`, 'success');
+                    
+                    // Déclencher le téléchargement
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rapport_secure_${reportId}.bin`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Téléchargement sécurisé échoué</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                    log(`Téléchargement sécurisé échoué: ${errorText}`, 'error');
+                }
+                
+                updateTestSummary();
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors du téléchargement sécurisé: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDemoDownload() {
+            const reportId = document.getElementById('test2ReportId').value;
+            const requesterName = document.getElementById('test2User').value;
+            const resultDiv = document.getElementById('test2Result');
+            
+            try {
+                log(`Test de téléchargement demo pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/demo/${reportId}?requesterName=${encodeURIComponent(requesterName)}`);
+                
+                resultDiv.style.display = 'block';
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Téléchargement demo réussi</h4>
+                        <p>Le fichier devrait se télécharger automatiquement (sans validation de code).</p>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Content-Type:</strong> ${response.headers.get('content-type')}</p>
+                    `;
+                    log(`Téléchargement demo réussi pour le rapport ${reportId}`, 'success');
+                    
+                    // Déclencher le téléchargement
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rapport_demo_${reportId}.bin`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Téléchargement demo échoué</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                    log(`Téléchargement demo échoué: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors du téléchargement demo: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFileManagement() {
+            const reportId = document.getElementById('test3ReportId').value;
+            const requesterName = document.getElementById('test3User').value;
+            const resultDiv = document.getElementById('test3Result');
+            
+            try {
+                log(`Test de gestion des fichiers pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/files/${reportId}?requesterName=${encodeURIComponent(requesterName)}`);
+                
+                resultDiv.style.display = 'block';
+                testResults.fileManagement.total++;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Gestion des fichiers réussie</h4>
+                        <p><strong>Nombre de fichiers:</strong> ${data.length}</p>
+                        <details>
+                            <summary>Détails des fichiers</summary>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </details>
+                    `;
+                    testResults.fileManagement.success++;
+                    log(`Gestion des fichiers réussie: ${data.length} fichiers trouvés`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Échec de gestion des fichiers</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                    log(`Échec de gestion des fichiers: ${errorText}`, 'error');
+                }
+                
+                updateTestSummary();
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors de la gestion des fichiers: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFileUpload() {
+            const reportId = document.getElementById('test3ReportId').value;
+            const resultDiv = document.getElementById('test3Result');
+            
+            try {
+                log(`Test d'upload de fichier pour le rapport ${reportId}...`);
+                
+                // Créer un fichier de test
+                const testContent = `Test file created at ${new Date().toISOString()}`;
+                const testFile = new File([testContent], 'test_file.txt', { type: 'text/plain' });
+                
+                const formData = new FormData();
+                formData.append('file', testFile);
+                formData.append('description', 'Fichier de test automatique');
+                formData.append('category', 'test');
+                
+                const response = await fetch(`${API_BASE}/api/files/reports/${reportId}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Upload de fichier réussi</h4>
+                        <p><strong>Fichier uploadé:</strong> ${data.file.fileName}</p>
+                        <p><strong>Taille:</strong> ${data.file.sizeBytes} bytes</p>
+                        <p><strong>Type:</strong> ${data.file.contentType}</p>
+                    `;
+                    log(`Upload de fichier réussi: ${data.file.fileName}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Échec de l'upload</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                    log(`Échec de l'upload: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors de l'upload: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStressValidation() {
+            const count = parseInt(document.getElementById('test4Count').value);
+            const reportId = document.getElementById('test4ReportId').value;
+            const resultDiv = document.getElementById('test4Result');
+            const logDiv = document.getElementById('test4Log');
+            
+            resultDiv.style.display = 'block';
+            logDiv.style.display = 'block';
+            logDiv.innerHTML = '';
+            
+            log(`Début du test de stress - ${count} validations...`);
+            
+            let successCount = 0;
+            const code = `CODE${reportId.toString().padStart(6, '0')}`;
+            
+            for (let i = 0; i < count; i++) {
+                try {
+                    const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reportId: parseInt(reportId), code: code })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.valid) {
+                        successCount++;
+                        logDiv.innerHTML += `<div style="color: #28a745;">[${i + 1}] ✅ Validation réussie</div>`;
+                    } else {
+                        logDiv.innerHTML += `<div style="color: #dc3545;">[${i + 1}] ❌ Validation échouée</div>`;
+                    }
+                } catch (error) {
+                    logDiv.innerHTML += `<div style="color: #dc3545;">[${i + 1}] ❌ Erreur: ${error.message}</div>`;
+                }
+                
+                // Petite pause entre les requêtes
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            const successRate = (successCount / count * 100).toFixed(1);
+            resultDiv.className = successRate >= 90 ? 'result success' : 'result error';
+            resultDiv.innerHTML = `
+                <h4>📊 Résultat du test de stress</h4>
+                <p><strong>Tests réussis:</strong> ${successCount}/${count} (${successRate}%)</p>
+                <p><strong>Code testé:</strong> ${code}</p>
+                <p><strong>Rapport ID:</strong> ${reportId}</p>
+            `;
+            
+            testResults.stressTest.total += count;
+            testResults.stressTest.success += successCount;
+            updateTestSummary();
+            
+            log(`Test de stress terminé: ${successCount}/${count} réussis (${successRate}%)`, successRate >= 90 ? 'success' : 'error');
+        }
+
+        async function testStressDownload() {
+            const count = parseInt(document.getElementById('test4Count').value);
+            const reportId = document.getElementById('test4ReportId').value;
+            const resultDiv = document.getElementById('test4Result');
+            const logDiv = document.getElementById('test4Log');
+            
+            resultDiv.style.display = 'block';
+            logDiv.style.display = 'block';
+            logDiv.innerHTML = '';
+            
+            log(`Début du test de stress - ${count} téléchargements...`);
+            
+            let successCount = 0;
+            const code = `CODE${reportId.toString().padStart(6, '0')}`;
+            
+            for (let i = 0; i < count; i++) {
+                try {
+                    const response = await fetch(`${API_BASE}/api/download/${reportId}?requesterName=testuser&code=${encodeURIComponent(code)}`);
+                    
+                    if (response.ok) {
+                        successCount++;
+                        logDiv.innerHTML += `<div style="color: #28a745;">[${i + 1}] ✅ Téléchargement réussi</div>`;
+                    } else {
+                        logDiv.innerHTML += `<div style="color: #dc3545;">[${i + 1}] ❌ Téléchargement échoué (${response.status})</div>`;
+                    }
+                } catch (error) {
+                    logDiv.innerHTML += `<div style="color: #dc3545;">[${i + 1}] ❌ Erreur: ${error.message}</div>`;
+                }
+                
+                // Petite pause entre les requêtes
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
+            const successRate = (successCount / count * 100).toFixed(1);
+            resultDiv.className = successRate >= 90 ? 'result success' : 'result error';
+            resultDiv.innerHTML = `
+                <h4>📊 Résultat du test de stress - Téléchargements</h4>
+                <p><strong>Téléchargements réussis:</strong> ${successCount}/${count} (${successRate}%)</p>
+                <p><strong>Code utilisé:</strong> ${code}</p>
+                <p><strong>Rapport ID:</strong> ${reportId}</p>
+            `;
+            
+            log(`Test de stress téléchargement terminé: ${successCount}/${count} réussis (${successRate}%)`, successRate >= 90 ? 'success' : 'error');
+        }
+
+        function updateTestSummary() {
+            const summaryDiv = document.getElementById('testSummary');
+            const totalTests = Object.values(testResults).reduce((sum, category) => sum + category.total, 0);
+            const totalSuccess = Object.values(testResults).reduce((sum, category) => sum + category.success, 0);
+            const successRate = totalTests > 0 ? (totalSuccess / totalTests * 100).toFixed(1) : 0;
+            
+            summaryDiv.innerHTML = `
+                <p><span class="status-indicator status-success"></span>Tests réussis: ${totalSuccess}/${totalTests} (${successRate}%)</p>
+                <p><span class="status-indicator status-info"></span>Validation des codes: ${testResults.codeValidation.success}/${testResults.codeValidation.total}</p>
+                <p><span class="status-indicator status-info"></span>Téléchargement sécurisé: ${testResults.secureDownload.success}/${testResults.secureDownload.total}</p>
+                <p><span class="status-indicator status-info"></span>Gestion des fichiers: ${testResults.fileManagement.success}/${testResults.fileManagement.total}</p>
+                <p><span class="status-indicator status-info"></span>Tests de stress: ${testResults.stressTest.success}/${testResults.stressTest.total}</p>
+            `;
+        }
+
+        async function runAllTests() {
+            log('🚀 Début de l\'exécution de tous les tests...', 'info');
+            
+            // Test 1: Validation des codes
+            generateTestCode();
+            await testCodeValidation();
+            
+            // Test 2: Téléchargement sécurisé
+            document.getElementById('test2Code').value = document.getElementById('test1Code').value;
+            await testSecureDownload();
+            
+            // Test 3: Gestion des fichiers
+            await testFileManagement();
+            
+            // Test 4: Test de stress (validation)
+            await testStressValidation();
+            
+            log('✅ Tous les tests ont été exécutés', 'success');
+        }
+
+        function clearResults() {
+            // Réinitialiser les résultats
+            testResults = {
+                codeValidation: { success: 0, total: 0 },
+                secureDownload: { success: 0, total: 0 },
+                fileManagement: { success: 0, total: 0 },
+                stressTest: { success: 0, total: 0 }
+            };
+            
+            // Masquer tous les résultats
+            document.querySelectorAll('.result').forEach(el => el.style.display = 'none');
+            document.getElementById('test4Log').style.display = 'none';
+            
+            // Vider le log d'erreurs
+            document.getElementById('errorLog').innerHTML = '';
+            
+            // Mettre à jour le résumé
+            updateTestSummary();
+            
+            log('🗑️ Tous les résultats ont été effacés', 'info');
+        }
+
+        // Initialisation
+        window.onload = function() {
+            generateTestCode();
+            updateTestSummary();
+            log('🧪 Système de test initialisé', 'info');
+        };
+    </script>
+</body>
+</html>

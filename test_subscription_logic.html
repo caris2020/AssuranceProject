@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Logique Abonnement</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>Test de la Logique de Calcul des Jours Restants</h1>
+    <button onclick="testLogic()">Tester la Logique</button>
+    <div id="results"></div>
+
+    <script>
+        function testLogic() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="info">Test en cours...</div>';
+
+            // Données actuelles de la base de données
+            const currentData = {
+                subscriptionStartDate: '2025-08-27',
+                subscriptionEndDate: '2026-08-27'
+            };
+
+            const now = new Date();
+            const startDate = new Date(currentData.subscriptionStartDate);
+            const endDate = new Date(currentData.subscriptionEndDate);
+
+            let html = `
+                <div class="result info">
+                    <h3>Données Actuelles</h3>
+                    <p><strong>Date de début:</strong> ${startDate.toLocaleDateString('fr-FR')}</p>
+                    <p><strong>Date de fin:</strong> ${endDate.toLocaleDateString('fr-FR')}</p>
+                    <p><strong>Date actuelle:</strong> ${now.toLocaleDateString('fr-FR')}</p>
+                </div>
+            `;
+
+            // Test de la logique corrigée
+            let daysUntilExpiration;
+            let status;
+            let message;
+
+            if (now < startDate) {
+                // Abonnement n'a pas encore commencé
+                daysUntilExpiration = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                status = 'not_started';
+                message = `L'abonnement n'a pas encore commencé. Il commence dans ${daysUntilExpiration} jours.`;
+            } else if (now > endDate) {
+                // Abonnement expiré
+                daysUntilExpiration = 0;
+                status = 'expired';
+                message = 'L\'abonnement est expiré.';
+            } else {
+                // Abonnement en cours
+                daysUntilExpiration = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                status = 'active';
+                message = `L'abonnement est en cours. Il expire dans ${daysUntilExpiration} jours.`;
+            }
+
+            html += `
+                <div class="result ${status === 'active' ? 'success' : status === 'expired' ? 'error' : 'warning'}">
+                    <h3>Résultat de la Logique Corrigée</h3>
+                    <p><strong>Statut:</strong> ${status}</p>
+                    <p><strong>Jours restants:</strong> ${daysUntilExpiration}</p>
+                    <p><strong>Message:</strong> ${message}</p>
+                </div>
+            `;
+
+            // Test de la barre de progression
+            let progressPercentage;
+            if (status === 'not_started') {
+                progressPercentage = 0;
+            } else if (status === 'expired') {
+                progressPercentage = 100;
+            } else {
+                const totalDuration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                const elapsedTime = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                progressPercentage = Math.min(100, Math.max(0, (elapsedTime / totalDuration) * 100));
+            }
+
+            html += `
+                <div class="result info">
+                    <h3>Barre de Progression</h3>
+                    <p><strong>Pourcentage écoulé:</strong> ${Math.round(progressPercentage)}%</p>
+                    <div style="width: 100%; background-color: #e9ecef; border-radius: 5px; height: 20px; margin: 10px 0;">
+                        <div style="width: ${progressPercentage}%; background-color: ${progressPercentage >= 100 ? '#dc3545' : progressPercentage >= 80 ? '#ffc107' : '#28a745'}; height: 100%; border-radius: 5px; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+
+            // Test de l'ancienne logique (problématique)
+            const oldLogic = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            const oldLogicResult = Math.max(0, oldLogic);
+
+            html += `
+                <div class="result error">
+                    <h3>Ancienne Logique (Problématique)</h3>
+                    <p><strong>Jours restants (ancienne logique):</strong> ${oldLogicResult}</p>
+                    <p><strong>Problème:</strong> Cette logique ne gère pas les abonnements qui n'ont pas encore commencé.</p>
+                </div>
+            `;
+
+            // Comparaison
+            const isConsistent = (status === 'not_started' && daysUntilExpiration === oldLogicResult) ||
+                                (status === 'active' && daysUntilExpiration === oldLogicResult) ||
+                                (status === 'expired' && oldLogicResult === 0);
+
+            html += `
+                <div class="result ${isConsistent ? 'success' : 'error'}">
+                    <h3>Comparaison</h3>
+                    <p><strong>Cohérence:</strong> ${isConsistent ? '✅ Les deux logiques sont cohérentes' : '❌ Les deux logiques sont incohérentes'}</p>
+                    <p><strong>Nouvelle logique:</strong> ${daysUntilExpiration} jours</p>
+                    <p><strong>Ancienne logique:</strong> ${oldLogicResult} jours</p>
+                </div>
+            `;
+
+            // Recommandations
+            html += `
+                <div class="result warning">
+                    <h3>Recommandations</h3>
+                    <p>1. <strong>Corriger les données:</strong> Les dates d'abonnement actuelles (2025-2026) sont dans le futur et ne sont pas réalistes.</p>
+                    <p>2. <strong>Utiliser la nouvelle logique:</strong> La logique corrigée gère correctement tous les cas (pas commencé, en cours, expiré).</p>
+                    <p>3. <strong>Mettre à jour l'interface:</strong> L'interface doit afficher des messages appropriés selon l'état de l'abonnement.</p>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

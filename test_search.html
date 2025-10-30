@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Recherche Rapports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test de la Recherche par Numéro de Dossier</h1>
+    
+    <div class="test-section info">
+        <h3>Instructions</h3>
+        <p>Ce test vérifie que la recherche par numéro de dossier fonctionne correctement dans la page des rapports.</p>
+        <p>Numéros de dossier de test disponibles :</p>
+        <ul>
+            <li><strong>Z60TFMIXUS</strong> - Suspicion multi-contrats</li>
+            <li><strong>A238ANALYSE</strong> - Analyse sinistre #A-238</li>
+            <li><strong>VERIFID001</strong> - Vérification identité</li>
+            <li><strong>SCORE001</strong> - Score risque assuré</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 1: Vérification des données backend</h3>
+        <button onclick="testBackendData()">Vérifier les données backend</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Test de recherche directe</h3>
+        <input type="text" id="searchInput" placeholder="Entrez un numéro de dossier (ex: Z60TFMIXUS)">
+        <button onclick="testSearch()">Tester la recherche</button>
+        <div id="search-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Test de redirection depuis les dossiers</h3>
+        <button onclick="testRedirect()">Simuler la redirection depuis un dossier</button>
+        <div id="redirect-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        async function testBackendData() {
+            const resultDiv = document.getElementById('backend-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                // Test des rapports
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                // Test des dossiers
+                const casesResponse = await fetch(`${API_BASE}/api/cases`);
+                const cases = await casesResponse.json();
+                
+                let html = '<div class="success">';
+                html += `<h4>✅ Données backend chargées avec succès</h4>`;
+                html += `<p><strong>Rapports:</strong> ${reports.length} trouvés</p>`;
+                html += `<p><strong>Dossiers:</strong> ${cases.length} trouvés</p>`;
+                
+                html += '<h5>Rapports avec caseId:</h5>';
+                html += '<ul>';
+                reports.forEach(r => {
+                    html += `<li>${r.title} - caseId: ${r.caseId || 'Aucun'}</li>`;
+                });
+                html += '</ul>';
+                
+                html += '<h5>Dossiers disponibles:</h5>';
+                html += '<ul>';
+                cases.forEach(c => {
+                    html += `<li>${c.reference} - ${c.type}</li>`;
+                });
+                html += '</ul>';
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors du chargement des données</h4><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function testSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const resultDiv = document.getElementById('search-result');
+            
+            if (!searchTerm) {
+                resultDiv.innerHTML = '<div class="error"><p>Veuillez entrer un numéro de dossier</p></div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Recherche en cours...</p>';
+            
+            try {
+                // Rechercher dans les rapports
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                // Rechercher dans les dossiers
+                const casesResponse = await fetch(`${API_BASE}/api/cases`);
+                const cases = await casesResponse.json();
+                
+                // Filtrer les rapports qui correspondent
+                const matchingReports = reports.filter(r => {
+                    // Correspondance directe par caseId
+                    if (r.caseId && r.caseId.toLowerCase().includes(searchTerm.toLowerCase())) {
+                        return true;
+                    }
+                    
+                    // Correspondance par référence de dossier
+                    const matchingCase = cases.find(c => 
+                        c.reference.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                    
+                    if (matchingCase) {
+                        // Vérifier si le rapport est lié à ce dossier
+                        try {
+                            const caseData = JSON.parse(matchingCase.dataJson || '{}');
+                            const caseInitiator = String(caseData?.initiator || caseData?.initiateur || '').toLowerCase();
+                            const reportInitiator = String(r.initiator || '').toLowerCase();
+                            
+                            return caseInitiator && reportInitiator && caseInitiator === reportInitiator;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                    
+                    return false;
+                });
+                
+                let html = '<div class="success">';
+                html += `<h4>🔍 Résultats de recherche pour "${searchTerm}"</h4>`;
+                html += `<p><strong>Rapports trouvés:</strong> ${matchingReports.length}</p>`;
+                
+                if (matchingReports.length > 0) {
+                    html += '<ul>';
+                    matchingReports.forEach(r => {
+                        html += `<li><strong>${r.title}</strong> - caseId: ${r.caseId || 'Aucun'}</li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<p>Aucun rapport trouvé pour ce numéro de dossier.</p>';
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors de la recherche</h4><p>${error.message}</p></div>`;
+            }
+        }
+
+        function testRedirect() {
+            const resultDiv = document.getElementById('redirect-result');
+            
+            // Simuler la redirection depuis un dossier
+            const testCaseNumber = 'Z60TFMIXUS';
+            localStorage.setItem('reports_search_case', testCaseNumber);
+            
+            let html = '<div class="info">';
+            html += `<h4>🔄 Test de redirection simulé</h4>`;
+            html += `<p>Numéro de dossier stocké dans localStorage: <strong>${testCaseNumber}</strong></p>`;
+            html += `<p>Maintenant, allez sur la page des rapports pour voir si la recherche automatique fonctionne.</p>`;
+            html += `<p><a href="http://localhost:5173/rapports" target="_blank">Ouvrir la page des rapports</a></p>`;
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

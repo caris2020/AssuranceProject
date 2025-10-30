@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic des Dates d'Expiration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .fix-button {
+            background-color: #dc3545;
+        }
+        .fix-button:hover {
+            background-color: #c82333;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .user-info {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .inconsistent {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic des Dates d'Expiration</h1>
+        <p><strong>Problème :</strong> Les utilisateurs ont des dates futures (28/08/2026) mais affichent "Expire aujourd'hui".</p>
+        
+        <div>
+            <button class="button" onclick="diagnoseDates()">🔍 Diagnostiquer les Dates</button>
+            <button class="button fix-button" onclick="fixAllDates()">🔧 Corriger Toutes les Dates</button>
+            <button class="button" onclick="checkSystemDate()">📅 Vérifier la Date Système</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        async function diagnoseDates() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">Diagnostic en cours...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/debug-dates`);
+                const data = await response.json();
+                
+                let html = `<div class="result">
+<h3>📊 Diagnostic des Dates d'Expiration</h3>
+<p><strong>Date actuelle du système :</strong> ${data.currentDate}</p>
+<p><strong>Date actuelle du navigateur :</strong> ${new Date().toISOString().split('T')[0]}</p>
+<hr>
+<h4>👥 Utilisateurs Analysés :</h4>`;
+
+                let inconsistentCount = 0;
+                
+                data.users.forEach(user => {
+                    const isInconsistent = user.isInconsistent || 
+                                         (user.daysUntilExpiration === 0 && user.subscriptionEndDate && 
+                                          new Date(user.subscriptionEndDate) > new Date());
+                    
+                    if (isInconsistent) inconsistentCount++;
+                    
+                    html += `<div class="user-info ${isInconsistent ? 'inconsistent' : ''}">
+<strong>${user.username}</strong> (${user.role})
+- Date d'expiration: ${user.subscriptionEndDate}
+- Jours restants calculés: ${user.daysUntilExpiration}
+- Statut: ${user.subscriptionStatus}
+- Actif: ${user.subscriptionActive}
+- Expiré: ${user.isExpired}
+${user.manualCalculation !== undefined ? `- Calcul manuel: ${user.manualCalculation}` : ''}
+${isInconsistent ? '⚠️ INCOHÉRENT' : '✅ Cohérent'}
+</div>`;
+                });
+                
+                html += `<hr>
+<h4>📈 Résumé :</h4>
+<p><strong>Total utilisateurs :</strong> ${data.users.length}</p>
+<p><strong>Incohérences détectées :</strong> ${inconsistentCount}</p>
+<p><strong>Utilisateurs cohérents :</strong> ${data.users.length - inconsistentCount}</p>`;
+
+                if (inconsistentCount > 0) {
+                    html += `<div class="warning">
+⚠️ <strong>${inconsistentCount} incohérences détectées !</strong>
+Cliquez sur "Corriger Toutes les Dates" pour résoudre le problème.
+</div>`;
+                } else {
+                    html += `<div class="success">
+✅ <strong>Aucune incohérence détectée !</strong>
+Tous les abonnements sont cohérents.
+</div>`;
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+❌ Erreur de diagnostic
+<p>Assurez-vous que le backend est démarré sur http://localhost:8080</p>
+<p>Erreur: ${error.message}</p>
+</div>`;
+            }
+        }
+        
+        async function fixAllDates() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">Correction en cours...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/fix-dates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="result success">
+✅ <strong>Correction réussie !</strong>
+<p>${data.message}</p>
+<p>Utilisateurs corrigés: ${data.correctedCount}</p>
+<p><strong>Action requise :</strong> Actualisez la page du tableau de bord administrateur.</p>
+</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+❌ Erreur lors de la correction
+<p>${data.message}</p>
+</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+❌ Erreur de connexion
+<p>Assurez-vous que le backend est démarré sur http://localhost:8080</p>
+<p>Erreur: ${error.message}</p>
+</div>`;
+            }
+        }
+        
+        async function checkSystemDate() {
+            const resultDiv = document.getElementById('result');
+            
+            const browserDate = new Date();
+            const browserDateStr = browserDate.toISOString().split('T')[0];
+            const browserTimeStr = browserDate.toLocaleTimeString();
+            
+            let html = `<div class="result">
+<h3>📅 Vérification des Dates Système</h3>
+<p><strong>Date du navigateur :</strong> ${browserDateStr}</p>
+<p><strong>Heure du navigateur :</strong> ${browserTimeStr}</p>
+<p><strong>Timezone du navigateur :</strong> ${Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
+<p><strong>Timestamp complet :</strong> ${browserDate.toISOString()}</p>
+<hr>
+<p><em>Cette information aide à identifier les problèmes de timezone ou de synchronisation de date.</em>
+</p>
+</div>`;
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        // Diagnostic automatique au chargement
+        window.onload = function() {
+            diagnoseDates();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Permissions Rapports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .report-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .permission { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Test des Permissions des Rapports</h1>
+    
+    <div class="test-section info">
+        <h3>Instructions</h3>
+                 <p>Ce test vérifie que les nouvelles permissions des rapports fonctionnent correctement :</p>
+         <ul>
+             <li>✅ Seuls les créateurs peuvent modifier et supprimer leurs rapports</li>
+             <li>✅ Les autres utilisateurs ont uniquement les droits en lecture</li>
+             <li>✅ Les boutons "Modifier" et "Supprimer" s'affichent uniquement pour les propriétaires</li>
+             <li>✅ Un indicateur "Lecture seule" s'affiche pour les non-propriétaires</li>
+         </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des données backend</h3>
+        <button class="test-button" onclick="testBackendData()">🔍 Vérifier les données backend</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des permissions</h3>
+        <button class="test-button" onclick="testPermissions()">🔐 Tester les permissions</button>
+        <div id="permissions-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des cartes de rapport</h3>
+        <button class="simulate-button" onclick="simulateReportCards()">🎴 Simuler les cartes</button>
+        <div id="cards-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        async function testBackendData() {
+            const resultDiv = document.getElementById('backend-result');
+            resultDiv.innerHTML = '<p>Test en cours...</p>';
+            
+            try {
+                // Récupérer les rapports
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                if (reports.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Aucun rapport trouvé</h4>
+                            <p>Aucun rapport n'est disponible pour tester les permissions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="success">';
+                html += '<h4>✅ Données backend récupérées</h4>';
+                html += '<p><strong>Nombre de rapports:</strong> ' + reports.length + '</p>';
+                html += '<h5>Exemples de rapports :</h5>';
+                
+                reports.slice(0, 3).forEach((report, index) => {
+                    html += `<div class="report-card">`;
+                    html += `<h4>Rapport ${index + 1}: ${report.title}</h4>`;
+                    html += `<p><strong>ID:</strong> ${report.id}</p>`;
+                    html += `<p><strong>Créé par:</strong> ${report.createdBy || 'Non défini'}</p>`;
+                    html += `<p><strong>Statut:</strong> ${report.status}</p>`;
+                    html += `<p><strong>Case ID:</strong> ${report.caseCode || 'Non défini'}</p>`;
+                    html += `</div>`;
+                });
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erreur lors du test</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testPermissions() {
+            const resultDiv = document.getElementById('permissions-result');
+            resultDiv.innerHTML = '<p>Test en cours...</p>';
+            
+            try {
+                // Récupérer les rapports
+                const reportsResponse = await fetch(`${API_BASE}/api/reports`);
+                const reports = await reportsResponse.json();
+                
+                if (reports.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Aucun rapport trouvé</h4>
+                            <p>Aucun rapport n'est disponible pour tester les permissions.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="success">';
+                html += '<h4>🔐 Test des permissions</h4>';
+                html += '<p>Test des permissions pour différents utilisateurs :</p>';
+                
+                const testUsers = ['admin', 'user1', 'user2'];
+                
+                for (const user of testUsers) {
+                    html += `<h5>Utilisateur: ${user}</h5>`;
+                    
+                    for (const report of reports.slice(0, 2)) {
+                        try {
+                            const permissionsResponse = await fetch(`${API_BASE}/api/reports/${report.id}/permissions?userName=${user}`);
+                            const permissions = await permissionsResponse.json();
+                            
+                            html += `<div class="report-card">`;
+                            html += `<p><strong>Rapport:</strong> ${report.title}</p>`;
+                            html += `<p><strong>Propriétaire:</strong> ${report.createdBy || 'Non défini'}</p>`;
+                            html += `<p><strong>Peut modifier:</strong> <span class="permission">${permissions.canEdit ? '✅ Oui' : '❌ Non'}</span></p>`;
+                            html += `<p><strong>Peut supprimer:</strong> <span class="permission">${permissions.canDelete ? '✅ Oui' : '❌ Non'}</span></p>`;
+                            html += `</div>`;
+                        } catch (error) {
+                            html += `<div class="error">`;
+                            html += `<p><strong>Erreur pour le rapport ${report.title}:</strong> ${error.message}</p>`;
+                            html += `</div>`;
+                        }
+                    }
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erreur lors du test</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function simulateReportCards() {
+            const resultDiv = document.getElementById('cards-result');
+            
+            // Simuler des données de rapport
+            const mockReports = [
+                {
+                    id: 1,
+                    title: "Rapport d'enquête - Dossier Z60TFMIXUS",
+                    status: "Disponible",
+                    createdBy: "admin",
+                    caseCode: "Z60TFMIXUS",
+                    beneficiary: "Jean Dupont",
+                    initiator: "Marie Martin",
+                    createdAt: "15/12/2024"
+                },
+                {
+                    id: 2,
+                    title: "Analyse frauduleuse - Dossier SCORE001",
+                    status: "En attente",
+                    createdBy: "user1",
+                    caseCode: "SCORE001",
+                    beneficiary: "Pierre Durand",
+                    initiator: "Sophie Bernard",
+                    createdAt: "14/12/2024"
+                }
+            ];
+            
+            const currentUser = "admin"; // Simuler l'utilisateur actuel
+            
+            let html = '<div class="success">';
+            html += '<h4>🎴 Simulation des cartes de rapport</h4>';
+            html += `<p><strong>Utilisateur actuel:</strong> ${currentUser}</p>`;
+            html += '<p>Voici comment les cartes s\'afficheraient :</p>';
+            
+                         mockReports.forEach(report => {
+                 const isOwner = report.createdBy === currentUser;
+                 const canEdit = isOwner; // Seul le propriétaire peut modifier
+                 const canDelete = isOwner; // Seul le propriétaire peut supprimer
+                
+                html += `<div class="report-card">`;
+                html += `<h4>${report.title}</h4>`;
+                html += `<p><strong>Statut:</strong> ${report.status}</p>`;
+                html += `<p><strong>Créé par:</strong> ${report.createdBy}</p>`;
+                html += `<p><strong>Dossier:</strong> ${report.caseCode}</p>`;
+                html += `<p><strong>Bénéficiaire:</strong> ${report.beneficiary}</p>`;
+                html += `<p><strong>Initiateur:</strong> ${report.initiator}</p>`;
+                html += `<p><strong>Date:</strong> ${report.createdAt}</p>`;
+                
+                // Boutons d'action
+                html += `<div style="margin-top: 10px;">`;
+                html += `<button style="background: #3b82f6; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Prévisualiser</button>`;
+                html += `<button style="background: #10b981; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Télécharger</button>`;
+                
+                if (canEdit) {
+                    html += `<button style="background: #f59e0b; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Modifier</button>`;
+                }
+                if (canDelete) {
+                    html += `<button style="background: #ef4444; color: white; border: none; padding: 5px 10px; margin: 2px; border-radius: 3px;">Supprimer</button>`;
+                }
+                
+                html += `</div>`;
+                
+                                 // Indicateur de propriétaire
+                 if (isOwner) {
+                     html += `<p style="color: #059669; font-size: 12px; margin-top: 5px;">👑 Vous êtes le propriétaire de ce rapport</p>`;
+                 } else {
+                     html += `<div style="margin-top: 10px; padding: 8px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px; color: #6b7280;">👁️ Lecture seule - Vous n'êtes pas le propriétaire de ce rapport</div>`;
+                 }
+                
+                html += `</div>`;
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        // Charger les tests au chargement de la page
+        window.onload = function() {
+            testBackendData();
+        };
+    </script>
+</body>
+</html>

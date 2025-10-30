@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Correction des Dates d'Expiration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .button.danger {
+            background-color: #dc3545;
+        }
+        .button.danger:hover {
+            background-color: #c82333;
+        }
+        .button.success {
+            background-color: #28a745;
+        }
+        .button.success:hover {
+            background-color: #218838;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .error {
+            background-color: #ffe6e6;
+        }
+        .warning {
+            background-color: #fff3cd;
+        }
+        .success {
+            background-color: #e6ffe6;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test de Correction des Dates d'Expiration</h1>
+    
+    <div class="container">
+        <h2>Actions</h2>
+        <button class="button" onclick="checkDates()">🔍 Vérifier les Dates</button>
+        <button class="button danger" onclick="fixDates()">🔧 Corriger les Dates</button>
+        <button class="button success" onclick="refreshPage()">🔄 Actualiser la Page</button>
+    </div>
+    
+    <div class="container">
+        <h2>Résultats</h2>
+        <div id="results">
+            <p>Cliquez sur "Vérifier les Dates" pour commencer l'analyse.</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>Informations de Debug</h2>
+        <div id="debug">
+            <p>Les informations de debug apparaîtront ici.</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        async function checkDates() {
+            const resultsDiv = document.getElementById('results');
+            const debugDiv = document.getElementById('debug');
+            
+            resultsDiv.innerHTML = '<div class="loading">Vérification des dates en cours...</div>';
+            debugDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/debug-dates`);
+                const data = await response.json();
+                
+                displayResults(data);
+                displayDebug(data);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Erreur lors de la vérification: ${error.message}</div>`;
+            }
+        }
+        
+        async function fixDates() {
+            if (!confirm('Êtes-vous sûr de vouloir corriger les dates d\'expiration ? Cette action ne peut pas être annulée.')) {
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="loading">Correction des dates en cours...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/fix-dates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultsDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Correction réussie</h3>
+                            <p>${data.message}</p>
+                            <p>Utilisateurs corrigés: ${data.correctedCount}</p>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Erreur lors de la correction</h3>
+                            <p>${data.message}</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Erreur lors de la correction: ${error.message}</div>`;
+            }
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            
+            let html = `
+                <h3>📊 Analyse des Dates d'Expiration</h3>
+                <p><strong>Date actuelle:</strong> ${data.currentDate}</p>
+                <p><strong>Nombre d'utilisateurs analysés:</strong> ${data.users.length}</p>
+            `;
+            
+            if (data.users.length > 0) {
+                html += `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Rôle</th>
+                                <th>Date d'Expiration</th>
+                                <th>Jours Restants</th>
+                                <th>Statut</th>
+                                <th>Incohérence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                let inconsistentCount = 0;
+                
+                data.users.forEach(user => {
+                    const isInconsistent = user.isInconsistent || false;
+                    const rowClass = isInconsistent ? 'error' : 'success';
+                    
+                    if (isInconsistent) inconsistentCount++;
+                    
+                    html += `
+                        <tr class="${rowClass}">
+                            <td>${user.username}</td>
+                            <td>${user.role}</td>
+                            <td>${user.subscriptionEndDate || 'N/A'}</td>
+                            <td>${user.daysUntilExpiration}</td>
+                            <td>${user.subscriptionStatus}</td>
+                            <td>${isInconsistent ? '❌ Oui' : '✅ Non'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                    <p><strong>Incohérences détectées:</strong> ${inconsistentCount}</p>
+                `;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function displayDebug(data) {
+            const debugDiv = document.getElementById('debug');
+            
+            let html = `
+                <h3>🔍 Informations Détaillées</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            
+            debugDiv.innerHTML = html;
+        }
+        
+        function refreshPage() {
+            location.reload();
+        }
+        
+        // Vérifier automatiquement au chargement de la page
+        window.onload = function() {
+            checkDates();
+        };
+    </script>
+</body>
+</html>

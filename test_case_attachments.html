@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fichiers Attachés - Dossiers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e8f4fd;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .attachment-list {
+            margin-top: 20px;
+        }
+
+        .attachment-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .attachment-item h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .attachment-item p {
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #27ae60;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📎 Test Fichiers Attachés - Dossiers</h1>
+            <p>Test des fonctionnalités de fichiers attachés aux dossiers d'assurance</p>
+        </div>
+
+        <div class="content">
+            <!-- Test de connexion -->
+            <div class="section">
+                <h2>🔗 Test de Connexion API</h2>
+                <button class="btn btn-info" onclick="testConnection()">Tester la Connexion</button>
+                <div id="connectionResult" class="result"></div>
+            </div>
+
+            <!-- Test des dossiers -->
+            <div class="section">
+                <h2>📁 Test des Dossiers</h2>
+                <button class="btn btn-info" onclick="loadCases()">📋 Charger les Dossiers</button>
+                <div id="casesResult" class="result"></div>
+                <div id="casesList" class="attachment-list"></div>
+            </div>
+
+            <!-- Test des fichiers attachés -->
+            <div class="section">
+                <h2>📎 Test des Fichiers Attachés</h2>
+                <div class="form-group">
+                    <label for="caseId">ID du Dossier:</label>
+                    <input type="number" id="caseId" value="1" placeholder="Entrez l'ID du dossier">
+                </div>
+                <button class="btn btn-info" onclick="loadAttachments()">📎 Charger les Fichiers Attachés</button>
+                <div id="attachmentsResult" class="result"></div>
+                <div id="attachmentsList" class="attachment-list"></div>
+            </div>
+
+            <!-- Test d'upload -->
+            <div class="section">
+                <h2>📤 Test d'Upload de Fichier</h2>
+                <div class="form-group">
+                    <label for="uploadCaseId">ID du Dossier:</label>
+                    <input type="number" id="uploadCaseId" value="1" placeholder="Entrez l'ID du dossier">
+                </div>
+                <div class="form-group">
+                    <label for="uploadFile">Fichier à uploader:</label>
+                    <input type="file" id="uploadFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt">
+                </div>
+                <div class="form-group">
+                    <label for="uploadDescription">Description:</label>
+                    <input type="text" id="uploadDescription" placeholder="Description du fichier">
+                </div>
+                <div class="form-group">
+                    <label for="uploadCategory">Catégorie:</label>
+                    <select id="uploadCategory">
+                        <option value="">Sélectionner une catégorie</option>
+                        <option value="document">Document</option>
+                        <option value="photo">Photo</option>
+                        <option value="rapport">Rapport</option>
+                        <option value="facture">Facture</option>
+                        <option value="contrat">Contrat</option>
+                        <option value="autre">Autre</option>
+                    </select>
+                </div>
+                <button class="btn btn-success" onclick="uploadAttachment()">📤 Upload Fichier</button>
+                <div id="uploadResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Test de connexion
+        async function testConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '🔄 Test de connexion en cours...';
+
+            try {
+                const response = await fetch(`${API_BASE}/cases`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <span class="status-indicator status-online"></span>
+                        ✅ Connexion réussie!<br>
+                        📊 ${data.length} dossiers trouvés<br>
+                        🕐 ${new Date().toLocaleString()}
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <span class="status-indicator status-offline"></span>
+                    ❌ Erreur de connexion: ${error.message}<br>
+                    🕐 ${new Date().toLocaleString()}
+                `;
+            }
+        }
+
+        // Charger les dossiers
+        async function loadCases() {
+            const resultDiv = document.getElementById('casesResult');
+            const casesListDiv = document.getElementById('casesList');
+
+            try {
+                const response = await fetch(`${API_BASE}/cases`);
+                const cases = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `📋 ${cases.length} dossiers trouvés`;
+
+                    casesListDiv.innerHTML = cases.map(caseItem => `
+                        <div class="attachment-item">
+                            <h4>📁 Dossier ${caseItem.id}</h4>
+                            <p><strong>Référence:</strong> ${caseItem.reference}</p>
+                            <p><strong>Statut:</strong> ${caseItem.status}</p>
+                            <p><strong>Type:</strong> ${caseItem.type}</p>
+                            <p><strong>Créé par:</strong> ${caseItem.createdBy}</p>
+                            <p><strong>Date:</strong> ${new Date(caseItem.createdAt).toLocaleString()}</p>
+                            <button class="btn btn-info" onclick="loadAttachmentsForCase(${caseItem.id})">
+                                📎 Voir les fichiers
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    throw new Error('Erreur lors du chargement des dossiers');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Charger les fichiers attachés pour un dossier spécifique
+        async function loadAttachmentsForCase(caseId) {
+            document.getElementById('caseId').value = caseId;
+            await loadAttachments();
+        }
+
+        // Charger les fichiers attachés
+        async function loadAttachments() {
+            const caseId = document.getElementById('caseId').value;
+            const resultDiv = document.getElementById('attachmentsResult');
+            const attachmentsListDiv = document.getElementById('attachmentsList');
+
+            if (!caseId) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Veuillez entrer un ID de dossier';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/attachments`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const attachments = data.attachments || [];
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `📎 ${attachments.length} fichiers attachés trouvés pour le dossier ${caseId}`;
+
+                    if (attachments.length > 0) {
+                        attachmentsListDiv.innerHTML = attachments.map(attachment => `
+                            <div class="attachment-item">
+                                <h4>📄 ${attachment.fileName}</h4>
+                                <p><strong>Taille:</strong> ${attachment.formattedSize}</p>
+                                <p><strong>Type:</strong> ${attachment.fileType}</p>
+                                <p><strong>Catégorie:</strong> ${attachment.category || 'Aucune'}</p>
+                                <p><strong>Description:</strong> ${attachment.description || 'Aucune'}</p>
+                                <p><strong>Créé:</strong> ${new Date(attachment.createdAt).toLocaleString()}</p>
+                                <button class="btn btn-info" onclick="downloadAttachment(${caseId}, ${attachment.id}, '${attachment.fileName}')">
+                                    ⬇️ Télécharger
+                                </button>
+                            </div>
+                        `).join('');
+                    } else {
+                        attachmentsListDiv.innerHTML = `
+                            <div class="attachment-item">
+                                <h4>📎 Aucun fichier attaché</h4>
+                                <p>Ce dossier n'a pas encore de fichiers attachés.</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    throw new Error(data.message || 'Erreur lors du chargement des fichiers');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Upload d'un fichier attaché
+        async function uploadAttachment() {
+            const caseId = document.getElementById('uploadCaseId').value;
+            const fileInput = document.getElementById('uploadFile');
+            const description = document.getElementById('uploadDescription').value;
+            const category = document.getElementById('uploadCategory').value;
+            const resultDiv = document.getElementById('uploadResult');
+
+            if (!fileInput.files[0]) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Veuillez sélectionner un fichier';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            if (description) formData.append('description', description);
+            if (category) formData.append('category', category);
+
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '🔄 Upload en cours...';
+
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ ${data.message}<br>
+                        📁 Fichier: ${data.file.fileName}<br>
+                        📏 Taille: ${data.file.formattedSize}<br>
+                        🏷️ Catégorie: ${data.file.category}<br>
+                        🕐 ${new Date().toLocaleString()}
+                    `;
+                    
+                    // Recharger les fichiers attachés
+                    document.getElementById('caseId').value = caseId;
+                    setTimeout(() => loadAttachments(), 1000);
+                } else {
+                    throw new Error(data.message || 'Erreur lors de l\'upload');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Télécharger un fichier attaché
+        async function downloadAttachment(caseId, attachmentId, fileName) {
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/attachments/${attachmentId}/download`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    alert(`✅ Téléchargement réussi: ${fileName}`);
+                } else {
+                    throw new Error('Erreur lors du téléchargement');
+                }
+            } catch (error) {
+                alert(`❌ Erreur: ${error.message}`);
+            }
+        }
+
+        // Test de connexion au chargement
+        window.onload = function() {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

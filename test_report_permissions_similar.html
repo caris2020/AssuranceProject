@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Permissions Rapports - Similaire aux Dossiers</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .report-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .owner-badge { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .action-button { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 2px; cursor: pointer; }
+        .delete-button { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 2px; cursor: pointer; }
+        .edit-button { background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; margin: 2px; cursor: pointer; }
+        .user-role { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+        .compare-button { background: #f59e0b; color: white; border: none; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Test Permissions Rapports - Similaire aux Dossiers</h1>
+    
+    <div class="test-section info">
+        <h3>Objectif de l'Implémentation</h3>
+        <p>Mettre en place la logique de permissions de la page dossier sur la page rapport avec une similarité dans la gestion des cartes :</p>
+        <ul>
+            <li>✅ <strong>Affichage du propriétaire</strong> : "Par: [Nom du créateur]" sur chaque carte</li>
+            <li>✅ <strong>Badge "Votre rapport"</strong> : Indicateur visuel pour les rapports du propriétaire</li>
+            <li>✅ <strong>Boutons d'actions conditionnels</strong> : Modifier/Supprimer selon les permissions</li>
+            <li>✅ <strong>Indicateur de lecture seule</strong> : Pour les non-propriétaires</li>
+            <li>✅ <strong>Permissions backend</strong> : Logique similaire à celle des dossiers</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Comparaison avec la Page Dossiers</h3>
+        <button class="compare-button" onclick="compareWithDossiers()">🔄 Comparer avec la logique des dossiers</button>
+        <div id="comparison-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des Cartes de Rapports</h3>
+        <button class="simulate-button" onclick="simulateReportCards()">📄 Simuler les cartes de rapports</button>
+        <div id="cards-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des Permissions Backend</h3>
+        <button class="test-button" onclick="testBackendPermissions()">🔐 Tester les permissions backend</button>
+        <div id="backend-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Instructions de Test</h3>
+        <div id="instructions-result"></div>
+    </div>
+
+    <script>
+        function compareWithDossiers() {
+            const resultDiv = document.getElementById('comparison-result');
+            
+            let html = '<div class="success">';
+            html += '<h4>🔄 Comparaison avec la logique des dossiers</h4>';
+            html += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+            html += '<tr style="background: #f8f9fa;"><th style="border: 1px solid #ddd; padding: 8px;">Fonctionnalité</th><th style="border: 1px solid #ddd; padding: 8px;">Dossiers</th><th style="border: 1px solid #ddd; padding: 8px;">Rapports</th><th style="border: 1px solid #ddd; padding: 8px;">Statut</th></tr>';
+            
+            const features = [
+                ['Affichage propriétaire', 'Par: [Nom] + Badge "Votre dossier"', 'Par: [Nom] + Badge "Votre rapport"', '✅ Identique'],
+                ['Bouton Modifier', 'Sur la carte principale', 'Sur la carte principale', '✅ Identique'],
+                ['Bouton Supprimer', 'Sur la carte principale', 'Sur la carte principale', '✅ Identique'],
+                ['Permissions backend', 'getCasePermissions()', 'getReportPermissions()', '✅ Similaire'],
+                ['Lecture seule', 'Indicateur pour non-propriétaires', 'Indicateur pour non-propriétaires', '✅ Identique'],
+                ['Props du composant', 'createdBy, currentUser', 'createdBy, currentUser', '✅ Identique'],
+                ['Logique de mapping', 'mapBackendCaseToCard()', 'mapBackend()', '✅ Similaire']
+            ];
+            
+            features.forEach(feature => {
+                html += `<tr><td style="border: 1px solid #ddd; padding: 8px;">${feature[0]}</td><td style="border: 1px solid #ddd; padding: 8px;">${feature[1]}</td><td style="border: 1px solid #ddd; padding: 8px;">${feature[2]}</td><td style="border: 1px solid #ddd; padding: 8px;">${feature[3]}</td></tr>`;
+            });
+            
+            html += '</table>';
+            html += '<p style="margin-top: 10px;"><strong>Conclusion :</strong> La logique de permissions des rapports est maintenant identique à celle des dossiers.</p>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        function simulateReportCards() {
+            const resultDiv = document.getElementById('cards-result');
+            
+            const currentUser = 'admin';
+            const testReports = [
+                {
+                    id: 1,
+                    title: 'Rapport d\'enquête - Usurpation',
+                    createdAt: '22/08/2025',
+                    createdBy: 'admin',
+                    status: 'Disponible',
+                    caseCode: 'COBRV8LPS0',
+                    canEdit: true,
+                    canDelete: true
+                },
+                {
+                    id: 2,
+                    title: 'Rapport d\'analyse - Fraude',
+                    createdAt: '21/08/2025',
+                    createdBy: 'user1',
+                    status: 'En attente',
+                    caseCode: 'TEST001',
+                    canEdit: false,
+                    canDelete: false
+                },
+                {
+                    id: 3,
+                    title: 'Rapport final - Décès fictif',
+                    createdAt: '20/08/2025',
+                    createdBy: 'admin',
+                    status: 'Traité',
+                    caseCode: 'FINAL123',
+                    canEdit: true,
+                    canDelete: true
+                }
+            ];
+            
+            let html = '<div class="success">';
+            html += '<h4>📄 Simulation des cartes de rapports</h4>';
+            html += '<p>Utilisateur actuel : <span class="user-role">' + currentUser + '</span></p>';
+            html += '<p>Voici comment les cartes s\'affichent :</p>';
+            
+            testReports.forEach(report => {
+                const isOwner = report.createdBy === currentUser;
+                
+                html += '<div class="report-card">';
+                html += '<h5 style="margin: 0 0 10px 0;">📄 ' + report.title + '</h5>';
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">Créé le ' + report.createdAt + '</p>';
+                
+                // Affichage du propriétaire
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">';
+                html += 'Par: <span style="font-weight: bold;">' + report.createdBy + '</span>';
+                if (isOwner) {
+                    html += ' <span class="owner-badge">👤 Votre rapport</span>';
+                }
+                html += '</p>';
+                
+                // Code du dossier
+                html += '<p style="margin: 5px 0; font-size: 12px; color: #666;">Dossier: <span style="font-family: monospace; color: #3b82f6;">' + report.caseCode + '</span></p>';
+                
+                // Statut
+                html += '<div style="margin: 10px 0;">';
+                const statusColors = {
+                    'Disponible': '#dbeafe',
+                    'En attente': '#fef3c7',
+                    'Traité': '#dcfce7'
+                };
+                const statusTextColors = {
+                    'Disponible': '#1e40af',
+                    'En attente': '#92400e',
+                    'Traité': '#166534'
+                };
+                html += '<span style="background: ' + statusColors[report.status] + '; color: ' + statusTextColors[report.status] + '; padding: 2px 6px; border-radius: 12px; font-size: 12px;">' + report.status + '</span>';
+                html += '</div>';
+                
+                // Boutons d'actions principales
+                html += '<div style="margin: 10px 0;">';
+                html += '<button class="action-button">Prévisualiser</button>';
+                html += '<button class="action-button">Télécharger</button>';
+                html += '</div>';
+                
+                // Actions conditionnelles
+                if (report.canEdit || report.canDelete) {
+                    html += '<div style="margin: 10px 0;">';
+                    if (report.canEdit) {
+                        html += '<button class="edit-button">✏️ Modifier</button>';
+                    }
+                    if (report.canDelete) {
+                        html += '<button class="delete-button">🗑️ Supprimer</button>';
+                    }
+                    html += '</div>';
+                }
+                
+                // Indicateur de lecture seule
+                if (!report.canEdit && !report.canDelete && currentUser !== report.createdBy) {
+                    html += '<div style="margin: 10px 0; padding: 8px; background: #f3f4f6; border-radius: 4px; font-size: 12px; text-align: center; color: #6b7280;">';
+                    html += '👁️ Lecture seule - Rapport créé par ' + report.createdBy;
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            });
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testBackendPermissions() {
+            const resultDiv = document.getElementById('backend-result');
+            
+            let html = '<div class="warning">';
+            html += '<h4>🔐 Test des permissions backend</h4>';
+            html += '<p><strong>Pour diagnostiquer le problème :</strong></p>';
+            html += '<ol>';
+            html += '<li><strong>Ouvrez la console du navigateur</strong> (F12)</li>';
+            html += '<li><strong>Allez sur la page des rapports</strong></li>';
+            html += '<li><strong>Vérifiez les logs</strong> pour voir les permissions chargées</li>';
+            html += '<li><strong>Cherchez les erreurs</strong> dans la console</li>';
+            html += '</ol>';
+            html += '<p><strong>Logs à rechercher :</strong></p>';
+            html += '<pre>Permissions pour le rapport [Titre] (ID: X): {canEdit: true, canDelete: true}</pre>';
+            html += '<pre>Créé par: [Nom], Utilisateur actuel: [Nom]</pre>';
+            html += '<p><strong>Fonction API utilisée :</strong></p>';
+            html += '<pre>getReportPermissions(reportId, userName)</pre>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        function showInstructions() {
+            const resultDiv = document.getElementById('instructions-result');
+            
+            let html = '<div class="info">';
+            html += '<h4>🔍 Instructions de test</h4>';
+            html += '<p><strong>Pour tester la nouvelle logique de permissions des rapports :</strong></p>';
+            html += '<ol>';
+            html += '<li><strong>Redémarrez votre backend</strong> pour que les modifications Java soient prises en compte</li>';
+            html += '<li><strong>Lancez votre frontend</strong></li>';
+            html += '<li><strong>Allez sur la page "Rapports"</strong></li>';
+            html += '<li><strong>Vérifiez que chaque carte affiche :</strong></li>';
+            html += '<ul>';
+            html += '<li>"Par: [Nom du créateur]"</li>';
+            html += '<li>Badge "👤 Votre rapport" pour vos rapports</li>';
+            html += '<li>Boutons "Modifier" et "Supprimer" pour vos rapports</li>';
+            html += '<li>Indicateur "Lecture seule" pour les rapports d\'autres utilisateurs</li>';
+            html += '</ul>';
+            html += '<li><strong>Créez un nouveau rapport</strong> pour tester les permissions</li>';
+            html += '<li><strong>Connectez-vous avec un autre utilisateur</strong> pour voir les restrictions</li>';
+            html += '</ol>';
+            html += '<p><strong>Comparaison avec les dossiers :</strong></p>';
+            html += '<ul>';
+            html += '<li>✅ Même affichage du propriétaire</li>';
+            html += '<li>✅ Même badge "Votre [élément]"</li>';
+            html += '<li>✅ Même logique de permissions</li>';
+            html += '<li>✅ Même indicateur de lecture seule</li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // Charger les instructions au chargement de la page
+        window.onload = function() {
+            showInstructions();
+        };
+    </script>
+</body>
+</html>

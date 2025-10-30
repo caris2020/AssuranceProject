@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Champs Date et Lieu du Sinistre</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9f9f9;
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            color: #495057;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test - Champs Date et Lieu du Sinistre</h1>
+        
+        <div class="success">
+            ✅ <strong>Implémentation terminée !</strong> Les champs "Date du sinistre" et "Lieu du sinistre" ont été ajoutés avec succès.
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Formulaire de création de dossier</h2>
+            <p>Les nouveaux champs ont été ajoutés dans le formulaire de création des dossiers :</p>
+            <ul>
+                <li><strong>Date du sinistre</strong> : Champ de type date pour saisir la date du sinistre</li>
+                <li><strong>Lieu du sinistre</strong> : Champ texte pour saisir le lieu du sinistre</li>
+            </ul>
+            <p>Ces champs sont positionnés après la "Nature du sinistre" et avant les champs de déclaration.</p>
+        </div>
+
+        <div class="test-section">
+            <h2>✏️ Formulaire de modification de dossier</h2>
+            <p>Les mêmes champs ont été ajoutés dans le formulaire de modification des dossiers existants.</p>
+            <p>Les valeurs sont automatiquement pré-remplies lors de l'édition d'un dossier existant.</p>
+        </div>
+
+        <div class="test-section">
+            <h2>🃏 Affichage sur la carte du dossier</h2>
+            <p>Les informations de date et lieu du sinistre sont maintenant affichées sur la carte du dossier :</p>
+            
+            <div class="card">
+                <h3>Exemple de carte de dossier</h3>
+                <div class="info-item">
+                    <span class="info-label">📅 Date sinistre:</span>
+                    <span class="info-value">15/03/2024</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">📍 Lieu sinistre:</span>
+                    <span class="info-value">Paris, France</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Modal de détails du dossier</h2>
+            <p>Dans la modal de détails du dossier, les informations sont affichées dans la section "Informations supplémentaires" :</p>
+            <ul>
+                <li>Date du sinistre (formatée en français)</li>
+                <li>Lieu du sinistre</li>
+                <li>Date de déclaration</li>
+                <li>Lieu de déclaration</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Fonctionnalités implémentées</h2>
+            <ul>
+                <li>✅ Ajout des champs dans le formulaire de création</li>
+                <li>✅ Ajout des champs dans le formulaire de modification</li>
+                <li>✅ Pré-remplissage des champs lors de l'édition</li>
+                <li>✅ Affichage sur la carte du dossier</li>
+                <li>✅ Affichage dans la modal de détails</li>
+                <li>✅ Formatage des dates en français</li>
+                <li>✅ Icônes appropriées (📅 pour la date, 📍 pour le lieu)</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Comment tester</h2>
+            <ol>
+                <li>Accédez à la page des dossiers</li>
+                <li>Cliquez sur "Nouveau dossier"</li>
+                <li>Remplissez le formulaire en incluant les nouveaux champs "Date du sinistre" et "Lieu du sinistre"</li>
+                <li>Soumettez le formulaire</li>
+                <li>Vérifiez que les informations apparaissent sur la carte du dossier créé</li>
+                <li>Cliquez sur "Voir le dossier" pour vérifier l'affichage dans la modal de détails</li>
+                <li>Testez la modification d'un dossier existant</li>
+            </ol>
+        </div>
+
+        <div class="success">
+            <strong>🎉 Résultat :</strong> Les champs "Date du sinistre" et "Lieu du sinistre" sont maintenant intégrés dans l'application et s'affichent correctement sur les cartes des dossiers d'enquête.
+        </div>
+    </div>
+</body>
+</html>

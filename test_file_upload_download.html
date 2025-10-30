@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Upload/Download - Gestion des Fichiers Assurance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 2px solid #e8f4fd;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .file-item h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .file-item p {
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #27ae60;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📁 Test Upload/Download - Gestion des Fichiers</h1>
+            <p>Test complet des fonctionnalités d'upload et download pour rapports et dossiers</p>
+        </div>
+
+        <div class="content">
+            <!-- Test de connexion -->
+            <div class="section">
+                <h2>🔗 Test de Connexion API</h2>
+                <button class="btn btn-info" onclick="testConnection()">Tester la Connexion</button>
+                <div id="connectionResult" class="result"></div>
+            </div>
+
+            <div class="grid">
+                <!-- Section Rapports -->
+                <div class="section">
+                    <h2>📄 Gestion des Fichiers - Rapports</h2>
+                    
+                    <div class="form-group">
+                        <label for="reportId">ID du Rapport:</label>
+                        <input type="number" id="reportId" value="1" placeholder="Entrez l'ID du rapport">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reportFile">Fichier à uploader:</label>
+                        <input type="file" id="reportFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reportDescription">Description:</label>
+                        <textarea id="reportDescription" placeholder="Description du fichier" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reportFileType">Type de fichier:</label>
+                        <select id="reportFileType">
+                            <option value="">Auto-détection</option>
+                            <option value="pdf">PDF</option>
+                            <option value="document">Document</option>
+                            <option value="image">Image</option>
+                            <option value="spreadsheet">Tableur</option>
+                            <option value="text">Texte</option>
+                            <option value="other">Autre</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-success" onclick="uploadReportFile()">📤 Upload Fichier Rapport</button>
+                    <button class="btn btn-info" onclick="listReportFiles()">📋 Lister les Fichiers</button>
+                    <button class="btn btn-warning" onclick="searchReportFiles()">🔍 Rechercher</button>
+
+                    <div id="reportResult" class="result"></div>
+                    <div id="reportFileList" class="file-list"></div>
+                </div>
+
+                <!-- Section Dossiers -->
+                <div class="section">
+                    <h2>📁 Gestion des Pièces Jointes - Dossiers</h2>
+                    
+                    <div class="form-group">
+                        <label for="caseId">ID du Dossier:</label>
+                        <input type="number" id="caseId" value="1" placeholder="Entrez l'ID du dossier">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="caseFile">Fichier à uploader:</label>
+                        <input type="file" id="caseFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.xls,.xlsx,.txt">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="caseDescription">Description:</label>
+                        <textarea id="caseDescription" placeholder="Description de la pièce jointe" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="caseCategory">Catégorie:</label>
+                        <select id="caseCategory">
+                            <option value="">Sélectionner une catégorie</option>
+                            <option value="document">Document</option>
+                            <option value="photo">Photo</option>
+                            <option value="rapport">Rapport</option>
+                            <option value="facture">Facture</option>
+                            <option value="contrat">Contrat</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-success" onclick="uploadCaseAttachment()">📤 Upload Pièce Jointe</button>
+                    <button class="btn btn-info" onclick="listCaseAttachments()">📋 Lister les Pièces Jointes</button>
+                    <button class="btn btn-warning" onclick="searchCaseAttachments()">🔍 Rechercher</button>
+
+                    <div id="caseResult" class="result"></div>
+                    <div id="caseFileList" class="file-list"></div>
+                </div>
+            </div>
+
+            <!-- Section Download -->
+            <div class="section">
+                <h2>⬇️ Téléchargement de Fichiers</h2>
+                <p>Utilisez les boutons de téléchargement dans les listes ci-dessus pour télécharger les fichiers.</p>
+                <div id="downloadResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+
+        // Test de connexion
+        async function testConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '🔄 Test de connexion en cours...';
+
+            try {
+                const response = await fetch(`${API_BASE}/reports`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <span class="status-indicator status-online"></span>
+                        ✅ Connexion réussie!<br>
+                        📊 ${data.length} rapports trouvés<br>
+                        🕐 ${new Date().toLocaleString()}
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <span class="status-indicator status-offline"></span>
+                    ❌ Erreur de connexion: ${error.message}<br>
+                    🕐 ${new Date().toLocaleString()}
+                `;
+            }
+        }
+
+        // Upload fichier rapport
+        async function uploadReportFile() {
+            const reportId = document.getElementById('reportId').value;
+            const fileInput = document.getElementById('reportFile');
+            const description = document.getElementById('reportDescription').value;
+            const fileType = document.getElementById('reportFileType').value;
+            const resultDiv = document.getElementById('reportResult');
+
+            if (!fileInput.files[0]) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Veuillez sélectionner un fichier';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            if (description) formData.append('description', description);
+            if (fileType) formData.append('fileType', fileType);
+
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '🔄 Upload en cours...';
+
+            try {
+                const response = await fetch(`${API_BASE}/files/reports/${reportId}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ ${data.message}<br>
+                        📁 Fichier: ${data.file.fileName}<br>
+                        📏 Taille: ${data.file.formattedSize}<br>
+                        🕐 ${new Date().toLocaleString()}
+                    `;
+                    listReportFiles(); // Rafraîchir la liste
+                } else {
+                    throw new Error(data.message || 'Erreur lors de l\'upload');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Upload pièce jointe dossier
+        async function uploadCaseAttachment() {
+            const caseId = document.getElementById('caseId').value;
+            const fileInput = document.getElementById('caseFile');
+            const description = document.getElementById('caseDescription').value;
+            const category = document.getElementById('caseCategory').value;
+            const resultDiv = document.getElementById('caseResult');
+
+            if (!fileInput.files[0]) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Veuillez sélectionner un fichier';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            if (description) formData.append('description', description);
+            if (category) formData.append('category', category);
+
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '🔄 Upload en cours...';
+
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        ✅ ${data.message}<br>
+                        📁 Fichier: ${data.file.fileName}<br>
+                        📏 Taille: ${data.file.formattedSize}<br>
+                        🏷️ Catégorie: ${data.file.category}<br>
+                        🕐 ${new Date().toLocaleString()}
+                    `;
+                    listCaseAttachments(); // Rafraîchir la liste
+                } else {
+                    throw new Error(data.message || 'Erreur lors de l\'upload');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Lister les fichiers de rapport
+        async function listReportFiles() {
+            const reportId = document.getElementById('reportId').value;
+            const resultDiv = document.getElementById('reportResult');
+            const fileListDiv = document.getElementById('reportFileList');
+
+            try {
+                const response = await fetch(`${API_BASE}/files/reports/${reportId}/files`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `📋 ${data.files.length} fichiers trouvés pour le rapport ${reportId}`;
+
+                    fileListDiv.innerHTML = data.files.map(file => `
+                        <div class="file-item">
+                            <h4>📄 ${file.fileName}</h4>
+                            <p>📏 Taille: ${file.formattedSize}</p>
+                            <p>🏷️ Type: ${file.fileType}</p>
+                            <p>📝 Description: ${file.description || 'Aucune'}</p>
+                            <p>📅 Créé: ${new Date(file.createdAt).toLocaleString()}</p>
+                            <button class="btn btn-info" onclick="downloadReportFile(${reportId}, ${file.id}, '${file.fileName}')">
+                                ⬇️ Télécharger
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteReportFile(${reportId}, ${file.id})">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la récupération');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Lister les pièces jointes de dossier
+        async function listCaseAttachments() {
+            const caseId = document.getElementById('caseId').value;
+            const resultDiv = document.getElementById('caseResult');
+            const fileListDiv = document.getElementById('caseFileList');
+
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/attachments`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `📋 ${data.attachments.length} pièces jointes trouvées pour le dossier ${caseId}`;
+
+                    fileListDiv.innerHTML = data.attachments.map(attachment => `
+                        <div class="file-item">
+                            <h4>📁 ${attachment.fileName}</h4>
+                            <p>📏 Taille: ${attachment.formattedSize}</p>
+                            <p>🏷️ Type: ${attachment.fileType}</p>
+                            <p>📂 Catégorie: ${attachment.category || 'Aucune'}</p>
+                            <p>📝 Description: ${attachment.description || 'Aucune'}</p>
+                            <p>📅 Créé: ${new Date(attachment.createdAt).toLocaleString()}</p>
+                            <button class="btn btn-info" onclick="downloadCaseAttachment(${caseId}, ${attachment.id}, '${attachment.fileName}')">
+                                ⬇️ Télécharger
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteCaseAttachment(${caseId}, ${attachment.id})">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la récupération');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Rechercher dans les fichiers de rapport
+        async function searchReportFiles() {
+            const reportId = document.getElementById('reportId').value;
+            const searchTerm = prompt('Entrez le terme de recherche:');
+            
+            if (!searchTerm) return;
+
+            const resultDiv = document.getElementById('reportResult');
+            const fileListDiv = document.getElementById('reportFileList');
+
+            try {
+                const response = await fetch(`${API_BASE}/files/reports/${reportId}/files/search?fileName=${encodeURIComponent(searchTerm)}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `🔍 ${data.files.length} résultats pour "${searchTerm}"`;
+
+                    fileListDiv.innerHTML = data.files.map(file => `
+                        <div class="file-item">
+                            <h4>📄 ${file.fileName}</h4>
+                            <p>📏 Taille: ${file.formattedSize}</p>
+                            <p>🏷️ Type: ${file.fileType}</p>
+                            <button class="btn btn-info" onclick="downloadReportFile(${reportId}, ${file.id}, '${file.fileName}')">
+                                ⬇️ Télécharger
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la recherche');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Rechercher dans les pièces jointes
+        async function searchCaseAttachments() {
+            const caseId = document.getElementById('caseId').value;
+            const searchTerm = prompt('Entrez le terme de recherche:');
+            
+            if (!searchTerm) return;
+
+            const resultDiv = document.getElementById('caseResult');
+            const fileListDiv = document.getElementById('caseFileList');
+
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/attachments/search?fileName=${encodeURIComponent(searchTerm)}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `🔍 ${data.attachments.length} résultats pour "${searchTerm}"`;
+
+                    fileListDiv.innerHTML = data.attachments.map(attachment => `
+                        <div class="file-item">
+                            <h4>📁 ${attachment.fileName}</h4>
+                            <p>📏 Taille: ${attachment.formattedSize}</p>
+                            <p>🏷️ Type: ${attachment.fileType}</p>
+                            <button class="btn btn-info" onclick="downloadCaseAttachment(${caseId}, ${attachment.id}, '${attachment.fileName}')">
+                                ⬇️ Télécharger
+                            </button>
+                        </div>
+                    `).join('');
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la recherche');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Télécharger fichier de rapport
+        async function downloadReportFile(reportId, fileId, fileName) {
+            const resultDiv = document.getElementById('downloadResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/files/reports/${reportId}/files/${fileId}/download`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Téléchargement réussi: ${fileName}`;
+                } else {
+                    throw new Error('Erreur lors du téléchargement');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Télécharger pièce jointe
+        async function downloadCaseAttachment(caseId, attachmentId, fileName) {
+            const resultDiv = document.getElementById('downloadResult');
+            
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/attachments/${attachmentId}/download`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Téléchargement réussi: ${fileName}`;
+                } else {
+                    throw new Error('Erreur lors du téléchargement');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Supprimer fichier de rapport
+        async function deleteReportFile(reportId, fileId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer ce fichier ?')) return;
+
+            const resultDiv = document.getElementById('reportResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/files/reports/${reportId}/files/${fileId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ ${data.message}`;
+                    listReportFiles(); // Rafraîchir la liste
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Supprimer pièce jointe
+        async function deleteCaseAttachment(caseId, attachmentId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cette pièce jointe ?')) return;
+
+            const resultDiv = document.getElementById('caseResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/files/cases/${caseId}/attachments/${attachmentId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ ${data.message}`;
+                    listCaseAttachments(); // Rafraîchir la liste
+                } else {
+                    throw new Error(data.message || 'Erreur lors de la suppression');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+            }
+        }
+
+        // Test de connexion au chargement
+        window.onload = function() {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

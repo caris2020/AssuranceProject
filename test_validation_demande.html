@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Validation à la Demande</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: white; }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .info { border-left: 4px solid #17a2b8; }
+        button { padding: 12px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        input { padding: 10px; margin: 5px; width: 200px; border: 1px solid #ddd; border-radius: 4px; }
+        .result { margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d; }
+        .result.success { background-color: #d4edda; border-color: #28a745; }
+        .result.error { background-color: #f8d7da; border-color: #dc3545; }
+        .result.info { background-color: #d1ecf1; border-color: #17a2b8; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-success { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-warning { background-color: #ffc107; }
+        .status-info { background-color: #17a2b8; }
+        .log { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; margin-top: 10px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .validation-flow { display: flex; flex-direction: column; gap: 10px; }
+        .step { padding: 10px; border: 1px solid #ddd; border-radius: 4px; background-color: #f8f9fa; }
+        .step.active { background-color: #e3f2fd; border-color: #2196f3; }
+        .step.completed { background-color: #e8f5e8; border-color: #4caf50; }
+        .step.failed { background-color: #ffebee; border-color: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Validation à la Demande</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Nouvelle Fonctionnalité</h3>
+            <p>La validation du code d'accès se fait maintenant <strong>uniquement à la demande explicite</strong> de l'utilisateur :</p>
+            <ul>
+                <li>✅ L'utilisateur doit cliquer sur "🔐 Valider le Code"</li>
+                <li>✅ La validation se fait via l'API backend</li>
+                <li>✅ Un message de validation s'affiche (succès/erreur)</li>
+                <li>✅ Le téléchargement n'est possible qu'après validation réussie</li>
+                <li>✅ Réinitialisation automatique si l'utilisateur modifie le code</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Test de Validation à la Demande</h3>
+            
+            <div class="validation-flow">
+                <div class="step" id="step1">
+                    <h4>Étape 1: Saisie du code</h4>
+                    <label>ID du Rapport: <input type="number" id="reportId" value="1" min="1"></label><br>
+                    <label>Code d'Accès: <input type="text" id="accessCode" placeholder="Ex: CODE000001"></label><br>
+                    <button class="btn-primary" onclick="generateCode()">Générer le Code</button>
+                </div>
+                
+                <div class="step" id="step2">
+                    <h4>Étape 2: Validation explicite</h4>
+                    <button class="btn-success" onclick="validateCodeExplicitly()" id="validateBtn">🔐 Valider le Code</button>
+                    <div id="validationStatus"></div>
+                </div>
+                
+                <div class="step" id="step3">
+                    <h4>Étape 3: Téléchargement (si validation réussie)</h4>
+                    <button class="btn-warning" onclick="attemptDownload()" id="downloadBtn" disabled>📥 Télécharger</button>
+                    <div id="downloadStatus"></div>
+                </div>
+            </div>
+            
+            <div id="testResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Tests Automatiques</h3>
+            
+            <button class="btn-primary" onclick="testValidCode()">Test Code Valide</button>
+            <button class="btn-warning" onclick="testInvalidCode()">Test Code Invalide</button>
+            <button class="btn-danger" onclick="testEmptyCode()">Test Code Vide</button>
+            <button class="btn-success" onclick="testCompleteFlow()">Test Flux Complet</button>
+            
+            <div id="autoTestResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Log des Actions</h3>
+            <div id="actionLog" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let currentValidationState = { valid: false, message: '' };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('actionLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#6c757d';
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function generateCode() {
+            const reportId = document.getElementById('reportId').value;
+            const code = `CODE${reportId.toString().padStart(6, '0')}`;
+            document.getElementById('accessCode').value = code;
+            log(`Code généré pour le rapport ${reportId}: ${code}`, 'success');
+            
+            // Réinitialiser l'état
+            resetValidationState();
+            updateStepStatus('step1', 'completed');
+            updateStepStatus('step2', 'active');
+        }
+
+        function resetValidationState() {
+            currentValidationState = { valid: false, message: '' };
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('validationStatus').innerHTML = '';
+            document.getElementById('downloadStatus').innerHTML = '';
+            updateStepStatus('step2', 'active');
+            updateStepStatus('step3', '');
+        }
+
+        function updateStepStatus(stepId, status) {
+            const step = document.getElementById(stepId);
+            step.className = `step ${status}`;
+        }
+
+        async function validateCodeExplicitly() {
+            const reportId = document.getElementById('reportId').value;
+            const code = document.getElementById('accessCode').value;
+            const validateBtn = document.getElementById('validateBtn');
+            const statusDiv = document.getElementById('validationStatus');
+            
+            if (!code.trim()) {
+                statusDiv.innerHTML = '<div style="color: #dc3545;">❌ Veuillez saisir un code d\'accès</div>';
+                log('Tentative de validation avec un code vide', 'error');
+                return;
+            }
+            
+            // Désactiver le bouton pendant la validation
+            validateBtn.disabled = true;
+            validateBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" style="display: inline-block;"></div>Validation...';
+            
+            try {
+                log(`Validation explicite du code ${code} pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: parseInt(reportId), code: code.trim().toUpperCase() })
+                });
+                
+                const data = await response.json();
+                
+                if (data.valid) {
+                    currentValidationState = { valid: true, message: 'Code valide !' };
+                    statusDiv.innerHTML = '<div style="color: #28a745;">✅ Code valide ! Vous pouvez maintenant télécharger le rapport.</div>';
+                    document.getElementById('downloadBtn').disabled = false;
+                    updateStepStatus('step2', 'completed');
+                    updateStepStatus('step3', 'active');
+                    log(`Validation réussie pour le code ${code}`, 'success');
+                } else {
+                    currentValidationState = { valid: false, message: 'Code invalide' };
+                    statusDiv.innerHTML = '<div style="color: #dc3545;">❌ Code invalide. Vérifiez le code d\'accès fourni.</div>';
+                    document.getElementById('downloadBtn').disabled = true;
+                    updateStepStatus('step2', 'failed');
+                    updateStepStatus('step3', '');
+                    log(`Validation échouée pour le code ${code}`, 'error');
+                }
+            } catch (error) {
+                currentValidationState = { valid: false, message: 'Erreur de validation' };
+                statusDiv.innerHTML = '<div style="color: #dc3545;">❌ Erreur lors de la validation du code.</div>';
+                document.getElementById('downloadBtn').disabled = true;
+                updateStepStatus('step2', 'failed');
+                updateStepStatus('step3', '');
+                log(`Erreur lors de la validation: ${error.message}`, 'error');
+            } finally {
+                // Réactiver le bouton
+                validateBtn.disabled = false;
+                validateBtn.innerHTML = '🔐 Valider le Code';
+            }
+        }
+
+        async function attemptDownload() {
+            if (!currentValidationState.valid) {
+                alert('Veuillez d\'abord valider le code d\'accès avant de télécharger.');
+                log('Tentative de téléchargement sans validation préalable', 'error');
+                return;
+            }
+            
+            const reportId = document.getElementById('reportId').value;
+            const code = document.getElementById('accessCode').value;
+            const downloadBtn = document.getElementById('downloadBtn');
+            const statusDiv = document.getElementById('downloadStatus');
+            
+            // Désactiver le bouton pendant le téléchargement
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = 'Téléchargement...';
+            
+            try {
+                log(`Tentative de téléchargement avec le code validé ${code}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/${reportId}?requesterName=testuser&code=${encodeURIComponent(code.trim().toUpperCase())}`);
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = '<div style="color: #28a745;">✅ Téléchargement réussi !</div>';
+                    updateStepStatus('step3', 'completed');
+                    log('Téléchargement réussi', 'success');
+                    
+                    // Déclencher le téléchargement
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rapport_${reportId}.bin`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const errorText = await response.text();
+                    statusDiv.innerHTML = `<div style="color: #dc3545;">❌ Téléchargement échoué: ${errorText}</div>`;
+                    updateStepStatus('step3', 'failed');
+                    log(`Téléchargement échoué: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div style="color: #dc3545;">❌ Erreur lors du téléchargement: ${error.message}</div>`;
+                updateStepStatus('step3', 'failed');
+                log(`Erreur lors du téléchargement: ${error.message}`, 'error');
+            } finally {
+                // Réactiver le bouton
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = '📥 Télécharger';
+            }
+        }
+
+        // Tests automatiques
+        async function testValidCode() {
+            log('🧪 Début du test avec un code valide...', 'info');
+            
+            // Générer un code valide
+            generateCode();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Valider le code
+            await validateCodeExplicitly();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Tenter le téléchargement
+            if (currentValidationState.valid) {
+                await attemptDownload();
+            }
+            
+            log('🧪 Test avec code valide terminé', 'info');
+        }
+
+        async function testInvalidCode() {
+            log('🧪 Début du test avec un code invalide...', 'info');
+            
+            // Saisir un code invalide
+            document.getElementById('accessCode').value = 'INVALID123';
+            resetValidationState();
+            
+            // Valider le code
+            await validateCodeExplicitly();
+            
+            log('🧪 Test avec code invalide terminé', 'info');
+        }
+
+        async function testEmptyCode() {
+            log('🧪 Début du test avec un code vide...', 'info');
+            
+            // Vider le code
+            document.getElementById('accessCode').value = '';
+            resetValidationState();
+            
+            // Tenter de valider
+            await validateCodeExplicitly();
+            
+            log('🧪 Test avec code vide terminé', 'info');
+        }
+
+        async function testCompleteFlow() {
+            log('🧪 Début du test de flux complet...', 'info');
+            
+            // Test 1: Code valide
+            await testValidCode();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Test 2: Code invalide
+            await testInvalidCode();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Test 3: Code vide
+            await testEmptyCode();
+            
+            log('🧪 Test de flux complet terminé', 'info');
+        }
+
+        // Initialisation
+        window.onload = function() {
+            log('🧪 Système de test de validation à la demande initialisé', 'info');
+            updateStepStatus('step1', 'active');
+        };
+    </script>
+</body>
+</html>

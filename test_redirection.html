@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Redirection Rapports</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .case-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Test de Redirection vers les Rapports</h1>
+    
+    <div class="test-section info">
+        <h3>Instructions</h3>
+        <p>Ce test vérifie que la redirection vers la page des rapports fonctionne correctement avec le filtre automatique.</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Test de redirection manuelle</h3>
+        <p>Cliquez sur le bouton ci-dessous pour tester la redirection vers la page des rapports :</p>
+        <button class="test-button" onclick="testRedirection()">🔗 Tester la redirection vers /rapports</button>
+        <div id="redirection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation du bouton "Voir rapport"</h3>
+        <p>Simulez le comportement du bouton "Voir rapport" depuis une carte de dossier :</p>
+        <div id="simulation-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Vérification du localStorage</h3>
+        <button class="simulate-button" onclick="checkLocalStorage()">🔍 Vérifier le localStorage</button>
+        <div id="localstorage-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        function testRedirection() {
+            const resultDiv = document.getElementById('redirection-result');
+            resultDiv.innerHTML = '<p>Test en cours...</p>';
+            
+            try {
+                // Simuler la redirection
+                const testCaseReference = 'SCORE001';
+                localStorage.setItem('reports_search_case', testCaseReference);
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ Redirection simulée avec succès</h4>
+                        <p><strong>Action effectuée:</strong></p>
+                        <ul>
+                            <li>✅ Stockage du numéro de dossier dans localStorage: <code>${testCaseReference}</code></li>
+                            <li>✅ Redirection vers: <code>/rapports</code></li>
+                        </ul>
+                        <p><strong>Prochaine étape:</strong> Ouvrez l'application et allez sur la page des rapports pour vérifier que le filtre est automatiquement appliqué.</p>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erreur lors du test</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function simulateViewReports() {
+            const resultDiv = document.getElementById('simulation-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                // Récupérer les dossiers
+                const casesResponse = await fetch(`${API_BASE}/api/cases`);
+                const cases = await casesResponse.json();
+                
+                if (cases.length === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Aucun dossier trouvé</h4>
+                            <p>Aucun dossier n'est disponible pour tester la redirection.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="success">';
+                html += '<h4>🎴 Simulation des boutons "Voir rapport"</h4>';
+                html += '<p>Cliquez sur un bouton pour simuler la redirection :</p>';
+                
+                cases.forEach((caseItem, index) => {
+                    html += `<div class="case-card">`;
+                    html += `<h4>Dossier: ${caseItem.reference}</h4>`;
+                    html += `<p><strong>ID:</strong> ${caseItem.id}</p>`;
+                    html += `<p><strong>Créé par:</strong> ${caseItem.createdBy}</p>`;
+                    html += `<button class="simulate-button" onclick="simulateRedirection('${caseItem.reference}')">📋 Voir rapport pour ${caseItem.reference}</button>`;
+                    html += `</div>`;
+                });
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Erreur lors de la simulation</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function simulateRedirection(caseReference) {
+            // Simuler exactement ce que fait handleViewReports
+            localStorage.setItem('reports_search_case', caseReference);
+            
+            const resultDiv = document.getElementById('simulation-result');
+            resultDiv.innerHTML = `
+                <div class="success">
+                    <h4>✅ Redirection simulée pour ${caseReference}</h4>
+                    <p><strong>Actions effectuées:</strong></p>
+                    <ul>
+                        <li>✅ localStorage.setItem('reports_search_case', '${caseReference}')</li>
+                        <li>✅ navigate('/rapports')</li>
+                    </ul>
+                    <p><strong>Test manuel:</strong></p>
+                    <ol>
+                        <li>Ouvrez l'application dans un autre onglet</li>
+                        <li>Allez sur la page "Rapports"</li>
+                        <li>Vérifiez que le filtre "Numéro de dossier" est automatiquement rempli avec "${caseReference}"</li>
+                        <li>Vérifiez que les rapports correspondants s'affichent</li>
+                    </ol>
+                </div>
+            `;
+        }
+
+        function checkLocalStorage() {
+            const resultDiv = document.getElementById('localstorage-result');
+            const searchCase = localStorage.getItem('reports_search_case');
+            
+            if (searchCase) {
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>✅ localStorage contient une valeur</h4>
+                        <p><strong>reports_search_case:</strong> <code>${searchCase}</code></p>
+                        <p><strong>Action:</strong> Cette valeur sera utilisée pour filtrer automatiquement les rapports.</p>
+                        <button onclick="clearLocalStorage()" style="background: #ef4444; color: white; border: none; border-radius: 4px; padding: 5px 10px;">🗑️ Effacer</button>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="info">
+                        <h4>ℹ️ localStorage vide</h4>
+                        <p>Aucune valeur de recherche n'est stockée dans le localStorage.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function clearLocalStorage() {
+            localStorage.removeItem('reports_search_case');
+            checkLocalStorage();
+        }
+
+        // Charger la simulation au chargement de la page
+        window.onload = function() {
+            simulateViewReports();
+        };
+    </script>
+</body>
+</html>

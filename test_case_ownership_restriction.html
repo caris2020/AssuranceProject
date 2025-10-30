@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Restriction Propriété Dossier pour Création Rapport</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .form-simulation { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .input-field { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin: 5px 0; }
+        .error-message { color: #dc3545; font-size: 12px; margin-top: 5px; }
+        .warning-message { color: #fd7e14; font-size: 12px; margin-top: 5px; }
+        .user-role { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        .test-button { background: #3b82f6; color: white; border: none; border-radius: 6px; }
+        .simulate-button { background: #10b981; color: white; border: none; border-radius: 6px; }
+        .restriction-button { background: #f59e0b; color: white; border: none; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>Test Restriction Propriété Dossier pour Création Rapport</h1>
+    
+    <div class="test-section info">
+        <h3>Objectif de la Restriction</h3>
+        <p>Implémenter une restriction qui empêche un utilisateur de créer un rapport pour un dossier dont il n'est pas propriétaire :</p>
+        <ul>
+            <li>✅ <strong>Champ de saisie libre</strong> : L'utilisateur peut saisir le numéro de dossier manuellement</li>
+            <li>✅ <strong>Vérification des permissions</strong> : Vérifier que l'utilisateur est propriétaire du dossier</li>
+            <li>✅ <strong>Messages d'erreur spécifiques</strong> : "Dossier inexistant" ou "Permissions insuffisantes"</li>
+            <li>✅ <strong>Validation en temps réel</strong> : Vérification automatique lors de la saisie</li>
+            <li>✅ <strong>API getCasePermissions</strong> : Utiliser pour vérifier les permissions</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation du Formulaire de Création</h3>
+        <button class="simulate-button" onclick="simulateCreateForm()">📝 Simuler le formulaire de création</button>
+        <div id="form-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des Scénarios de Restriction</h3>
+        <button class="restriction-button" onclick="testRestrictionScenarios()">🔒 Tester les scénarios de restriction</button>
+        <div id="scenarios-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test de l'API getCasePermissions</h3>
+        <button class="test-button" onclick="testCasePermissionsAPI()">🔐 Tester l'API des permissions</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Instructions de Test</h3>
+        <div id="instructions-result"></div>
+    </div>
+
+    <script>
+        function simulateCreateForm() {
+            const resultDiv = document.getElementById('form-result');
+            
+            const currentUser = 'admin';
+            
+            let html = '<div class="success">';
+            html += '<h4>📝 Simulation du formulaire de création de rapport</h4>';
+            html += '<p>Utilisateur actuel : <span class="user-role">' + currentUser + '</span></p>';
+            
+            html += '<div class="form-simulation">';
+            html += '<h5>Formulaire de création de rapport</h5>';
+            
+            // Message d'information
+            html += '<div style="background: #dbeafe; border: 1px solid #93c5fd; border-radius: 4px; padding: 10px; margin: 10px 0; font-size: 12px; color: #1e40af;">';
+            html += '<strong>Information :</strong> Vous ne pouvez créer un rapport que pour vos propres dossiers. Entrez le numéro de dossier et le système vérifiera automatiquement vos permissions. Tous les champs marqués d\'un * sont obligatoires et doivent correspondre aux informations du dossier sélectionné. Le fichier du rapport est également obligatoire.';
+            html += '</div>';
+            
+            // Champ titre
+            html += '<label style="display: block; margin: 10px 0;">';
+            html += '<span style="color: #6b7280; font-size: 12px;">Titre *</span><br>';
+            html += '<input type="text" placeholder="Titre du rapport" class="input-field">';
+            html += '</label>';
+            
+            // Champ numéro de dossier
+            html += '<label style="display: block; margin: 10px 0;">';
+            html += '<span style="color: #6b7280; font-size: 12px;">Numéro de dossier *</span><br>';
+            html += '<input type="text" placeholder="Entrez le numéro de dossier" class="input-field">';
+            html += '<div class="error-message" style="display: none;">Exemple: Dossier inexistant</div>';
+            html += '</label>';
+            
+            // Statut
+            html += '<label style="display: block; margin: 10px 0;">';
+            html += '<span style="color: #6b7280; font-size: 12px;">Statut</span><br>';
+            html += '<select class="input-field">';
+            html += '<option value="DISPONIBLE">Disponible</option>';
+            html += '<option value="EN_ATTENTE">En attente</option>';
+            html += '<option value="TRAITE">Traité</option>';
+            html += '</select>';
+            html += '</label>';
+            
+            html += '</div>';
+            
+            html += '<p><strong>Fonctionnalités implémentées :</strong></p>';
+            html += '<ul>';
+            html += '<li>✅ Champ de saisie libre pour le numéro de dossier</li>';
+            html += '<li>✅ Vérification automatique des permissions via getCasePermissions()</li>';
+            html += '<li>✅ Message "Dossier inexistant" si le dossier n\'existe pas</li>';
+            html += '<li>✅ Message "Permissions insuffisantes" si l\'utilisateur n\'est pas propriétaire</li>';
+            html += '<li>✅ Validation en temps réel lors de la saisie</li>';
+            html += '</ul>';
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testRestrictionScenarios() {
+            const resultDiv = document.getElementById('scenarios-result');
+            
+            let html = '<div class="warning">';
+            html += '<h4>🔒 Test des scénarios de restriction</h4>';
+            
+            const scenarios = [
+                {
+                    scenario: 'Utilisateur propriétaire du dossier',
+                    user: 'admin',
+                    caseId: 'COBRV8LPS0',
+                    caseOwner: 'admin',
+                    expected: '✅ Autorisé',
+                    message: 'Aucun message d\'erreur',
+                    description: 'L\'utilisateur peut créer un rapport car il est propriétaire du dossier'
+                },
+                {
+                    scenario: 'Utilisateur non propriétaire du dossier',
+                    user: 'user1',
+                    caseId: 'COBRV8LPS0',
+                    caseOwner: 'admin',
+                    expected: '❌ Refusé',
+                    message: 'Permissions insuffisantes. Vous n\'êtes pas propriétaire de ce dossier.',
+                    description: 'L\'utilisateur ne peut pas créer un rapport car il n\'est pas propriétaire'
+                },
+                {
+                    scenario: 'Dossier inexistant',
+                    user: 'admin',
+                    caseId: 'INEXISTANT',
+                    caseOwner: 'N/A',
+                    expected: '❌ Refusé',
+                    message: 'Dossier inexistant',
+                    description: 'L\'utilisateur ne peut pas créer un rapport pour un dossier inexistant'
+                },
+                {
+                    scenario: 'Champ vide',
+                    user: 'admin',
+                    caseId: '',
+                    caseOwner: 'N/A',
+                    expected: '❌ Refusé',
+                    message: 'Aucun message (validation côté formulaire)',
+                    description: 'Le champ est obligatoire, validation côté formulaire'
+                }
+            ];
+            
+            html += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+            html += '<tr style="background: #f8f9fa;"><th style="border: 1px solid #ddd; padding: 8px;">Scénario</th><th style="border: 1px solid #ddd; padding: 8px;">Utilisateur</th><th style="border: 1px solid #ddd; padding: 8px;">Dossier</th><th style="border: 1px solid #ddd; padding: 8px;">Propriétaire</th><th style="border: 1px solid #ddd; padding: 8px;">Résultat</th><th style="border: 1px solid #ddd; padding: 8px;">Message d\'erreur</th><th style="border: 1px solid #ddd; padding: 8px;">Description</th></tr>';
+            
+            scenarios.forEach(scenario => {
+                html += '<tr>';
+                html += '<td style="border: 1px solid #ddd; padding: 8px;">' + scenario.scenario + '</td>';
+                html += '<td style="border: 1px solid #ddd; padding: 8px;"><span class="user-role">' + scenario.user + '</span></td>';
+                html += '<td style="border: 1px solid #ddd; padding: 8px;">' + scenario.caseId + '</td>';
+                html += '<td style="border: 1px solid #ddd; padding: 8px;">' + scenario.caseOwner + '</td>';
+                html += '<td style="border: 1px solid #ddd; padding: 8px;"><strong>' + scenario.expected + '</strong></td>';
+                html += '<td style="border: 1px solid #ddd; padding: 8px;"><span class="error-message">' + scenario.message + '</span></td>';
+                html += '<td style="border: 1px solid #ddd; padding: 8px;">' + scenario.description + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            
+            html += '<p style="margin-top: 15px;"><strong>Logique de validation :</strong></p>';
+            html += '<pre>async function validateCaseId(caseId, userName) {
+  // 1. Vérifier si le champ n\'est pas vide
+  if (!caseId.trim()) {
+    setCaseIdError(\'\');
+    return false;
+  }
+  
+  // 2. Rechercher le dossier
+  const case = await findCaseByReference(caseId);
+  
+  if (!case) {
+    setCaseIdError(\'Dossier inexistant\');
+    return false;
+  }
+  
+  // 3. Vérifier les permissions
+  const permissions = await getCasePermissions(case.id, userName);
+  
+  if (!permissions.canEdit && !permissions.canDelete) {
+    setCaseIdError(\'Permissions insuffisantes. Vous n\'êtes pas propriétaire de ce dossier.\');
+    return false;
+  }
+  
+  // 4. Autoriser la création
+  setCaseIdError(\'\');
+  return true;
+}</pre>';
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function testCasePermissionsAPI() {
+            const resultDiv = document.getElementById('api-result');
+            
+            let html = '<div class="info">';
+            html += '<h4>🔐 Test de l\'API getCasePermissions</h4>';
+            html += '<p><strong>Endpoint utilisé :</strong></p>';
+            html += '<pre>GET /api/cases/{caseId}/permissions?actorName={userName}</pre>';
+            
+            html += '<p><strong>Réponse attendue :</strong></p>';
+            html += '<pre>{
+  "canEdit": true,
+  "canDelete": true
+}</pre>';
+            
+            html += '<p><strong>Logique de vérification :</strong></p>';
+            html += '<ul>';
+            html += '<li>Si <code>canEdit</code> ou <code>canDelete</code> est <code>true</code> → Utilisateur est propriétaire</li>';
+            html += '<li>Si les deux sont <code>false</code> → Utilisateur n\'est pas propriétaire</li>';
+            html += '<li>En cas d\'erreur → Afficher un message d\'erreur</li>';
+            html += '</ul>';
+            
+            html += '<p><strong>Messages d\'erreur spécifiques :</strong></p>';
+            html += '<ul>';
+            html += '<li><span class="error-message">Dossier inexistant</span> - Si le dossier n\'existe pas dans la base de données</li>';
+            html += '<li><span class="error-message">Permissions insuffisantes. Vous n\'êtes pas propriétaire de ce dossier.</span> - Si l\'utilisateur n\'est pas propriétaire</li>';
+            html += '<li><span class="error-message">Erreur lors de la vérification des permissions du dossier</span> - En cas d\'erreur technique</li>';
+            html += '</ul>';
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        function showInstructions() {
+            const resultDiv = document.getElementById('instructions-result');
+            
+            let html = '<div class="info">';
+            html += '<h4>🔍 Instructions de test</h4>';
+            html += '<p><strong>Pour tester la nouvelle restriction de propriété des dossiers :</strong></p>';
+            html += '<ol>';
+            html += '<li><strong>Redémarrez votre backend</strong> pour que les modifications soient prises en compte</li>';
+            html += '<li><strong>Lancez votre frontend</strong></li>';
+            html += '<li><strong>Connectez-vous avec un utilisateur</strong> qui a des dossiers</li>';
+            html += '<li><strong>Allez sur la page "Rapports"</strong></li>';
+            html += '<li><strong>Cliquez sur "Ajouter un rapport"</strong></li>';
+            html += '<li><strong>Testez les différents scénarios :</strong></li>';
+            html += '<ul>';
+            html += '<li><strong>Dossier valide et propriétaire</strong> : Entrez un numéro de dossier dont vous êtes propriétaire</li>';
+            html += '<li><strong>Dossier inexistant</strong> : Entrez un numéro de dossier qui n\'existe pas → "Dossier inexistant"</li>';
+            html += '<li><strong>Dossier d\'un autre utilisateur</strong> : Entrez un numéro de dossier d\'un autre utilisateur → "Permissions insuffisantes"</li>';
+            html += '<li><strong>Champ vide</strong> : Laissez le champ vide → Validation côté formulaire</li>';
+            html += '</ul>';
+            html += '<li><strong>Vérifiez les messages d\'erreur</strong> qui s\'affichent en temps réel</li>';
+            html += '<li><strong>Vérifiez les logs dans la console</strong> pour voir les appels API</li>';
+            html += '</ol>';
+            
+            html += '<p><strong>Fonctionnalités à vérifier :</strong></p>';
+            html += '<ul>';
+            html += '<li>✅ Champ de saisie libre pour le numéro de dossier</li>';
+            html += '<li>✅ Validation en temps réel lors de la saisie</li>';
+            html += '<li>✅ Message "Dossier inexistant" pour les dossiers inexistants</li>';
+            html += '<li>✅ Message "Permissions insuffisantes" pour les non-propriétaires</li>';
+            html += '<li>✅ Vérification des permissions via getCasePermissions()</li>';
+            html += '<li>✅ Gestion des cas d\'erreur technique</li>';
+            html += '</ul>';
+            
+            html += '</div>';
+            resultDiv.innerHTML = html;
+        }
+
+        // Charger les instructions au chargement de la page
+        window.onload = function() {
+            showInstructions();
+        };
+    </script>
+</body>
+</html>

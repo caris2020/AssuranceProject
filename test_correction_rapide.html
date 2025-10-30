@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Rapide - Correction des dates</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .correct {
+            background-color: #d4edda;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Rapide - Correction des dates d'abonnement</h1>
+        
+        <div class="status info">
+            <h3>📋 Objectif</h3>
+            <p>Vérifier que les corrections des dates d'abonnement fonctionnent maintenant que le backend a été reconstruit.</p>
+        </div>
+
+        <button onclick="testCorrection()">🚀 Tester les corrections</button>
+        <button onclick="clearResults()">🗑️ Effacer</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function displayResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Fonction pour calculer les jours restants (version corrigée)
+        function calculateDaysRemaining(endDate) {
+            const end = new Date(endDate);
+            const now = new Date();
+            const diffTime = end.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        async function testCorrection() {
+            clearResults();
+            displayResult('🚀 Démarrage du test de correction...', 'info');
+
+            try {
+                // Test 1: Vérifier que le backend répond
+                displayResult('🔍 Test de connexion au backend...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/users');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const users = await response.json();
+                displayResult(`✅ Backend accessible - ${users.length} utilisateurs récupérés`, 'success');
+
+                // Test 2: Analyser les données des utilisateurs
+                displayResult('🔍 Analyse des données d\'abonnement...', 'info');
+                
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Date de fin</th>
+                                <th>Backend (jours)</th>
+                                <th>Frontend (jours)</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                let correctCount = 0;
+                let totalCount = 0;
+
+                users.forEach(user => {
+                    if (user.role !== 'ADMIN' && user.subscriptionEndDate) {
+                        totalCount++;
+                        const backendDays = user.daysUntilExpiration;
+                        const frontendDays = calculateDaysRemaining(user.subscriptionEndDate);
+                        
+                        const isCorrect = Math.abs(backendDays - frontendDays) <= 1; // Tolérance de 1 jour
+                        const statusClass = isCorrect ? 'correct' : 'incorrect';
+                        const statusText = isCorrect ? '✅ Correct' : '❌ Incohérent';
+                        
+                        if (isCorrect) correctCount++;
+
+                        tableHTML += `
+                            <tr class="${statusClass}">
+                                <td>${user.firstName} ${user.lastName}</td>
+                                <td>${new Date(user.subscriptionEndDate).toLocaleDateString('fr-FR')}</td>
+                                <td>${backendDays}</td>
+                                <td>${frontendDays}</td>
+                                <td>${statusText}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                tableHTML += '</tbody></table>';
+                
+                const resultsDiv = document.getElementById('results');
+                const tableDiv = document.createElement('div');
+                tableDiv.innerHTML = tableHTML;
+                resultsDiv.appendChild(tableDiv);
+
+                // Résumé
+                if (correctCount === totalCount && totalCount > 0) {
+                    displayResult(`🎉 SUCCÈS ! Toutes les ${totalCount} corrections sont appliquées et fonctionnent correctement.`, 'success');
+                } else if (totalCount > 0) {
+                    displayResult(`⚠️ ${correctCount}/${totalCount} corrections fonctionnent. ${totalCount - correctCount} incohérences restent.`, 'error');
+                } else {
+                    displayResult('ℹ️ Aucun utilisateur avec abonnement trouvé pour le test.', 'info');
+                }
+
+                // Test 3: Vérifier la date actuelle
+                const now = new Date();
+                displayResult(`📅 Date actuelle du système : ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}`, 'info');
+
+            } catch (error) {
+                displayResult(`❌ Erreur lors du test : ${error.message}`, 'error');
+            }
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            displayResult('📋 Page de test chargée. Cliquez sur "Tester les corrections" pour commencer.', 'info');
+        };
+    </script>
+</body>
+</html>

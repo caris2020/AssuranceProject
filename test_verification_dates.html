@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification - Correction des dates d'abonnement</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .match {
+            background-color: #d4edda;
+        }
+        .mismatch {
+            background-color: #f8d7da;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Vérification - Correction des dates d'abonnement</h1>
+        
+        <div class="status info">
+            <h3>📋 Objectif du test</h3>
+            <p>Vérifier que les corrections des dates d'abonnement fonctionnent correctement et que les deux sections (Utilisateurs et Abonnements) affichent des données cohérentes.</p>
+        </div>
+
+        <div class="status info">
+            <h3>🛠️ Corrections appliquées</h3>
+            <ul>
+                <li><strong>Backend :</strong> Remplacement des dates fixes par <code>LocalDate.now()</code></li>
+                <li><strong>Frontend :</strong> Remplacement de <code>new Date('2025-08-27')</code> par <code>new Date()</code></li>
+                <li><strong>Composants corrigés :</strong> SubscriptionManagement.tsx et SubscriptionInfo.tsx</li>
+            </ul>
+        </div>
+
+        <button onclick="runVerification()">🚀 Lancer la vérification</button>
+        <button onclick="clearResults()">🗑️ Effacer les résultats</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function displayResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong> - ${message}`;
+            resultsDiv.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Fonction pour calculer les jours restants (version corrigée)
+        function calculateDaysRemaining(endDate) {
+            const end = new Date(endDate);
+            const now = new Date();
+            const diffTime = end.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        // Fonction pour calculer les jours restants (ancienne version avec date fixe)
+        function calculateDaysRemainingOld(endDate) {
+            const end = new Date(endDate);
+            const backendDate = new Date('2025-08-27');
+            const diffTime = end.getTime() - backendDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        async function runVerification() {
+            clearResults();
+            displayResult('🚀 Démarrage de la vérification...', 'info');
+
+            try {
+                // Test 1: Vérifier la date actuelle
+                const now = new Date();
+                displayResult(`✅ Date actuelle : ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR')}`, 'success');
+
+                // Test 2: Vérifier les endpoints du backend
+                displayResult('🔍 Test des endpoints du backend...', 'info');
+                
+                const endpoints = [
+                    { name: 'Utilisateurs', url: 'http://localhost:8080/api/users' },
+                    { name: 'Abonnements actifs', url: 'http://localhost:8080/api/subscriptions/active' },
+                    { name: 'Abonnements expirés', url: 'http://localhost:8080/api/subscriptions/expired' }
+                ];
+
+                const results = {};
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(endpoint.url);
+                        if (response.ok) {
+                            const data = await response.json();
+                            results[endpoint.name] = data;
+                            displayResult(`✅ ${endpoint.name}: ${data.length} éléments récupérés`, 'success');
+                        } else {
+                            displayResult(`❌ ${endpoint.name}: Erreur ${response.status}`, 'error');
+                        }
+                    } catch (error) {
+                        displayResult(`❌ ${endpoint.name}: ${error.message}`, 'error');
+                    }
+                }
+
+                // Test 3: Comparer les calculs de jours restants
+                if (results['Utilisateurs'] && results['Abonnements actifs']) {
+                    displayResult('🔍 Comparaison des calculs de jours restants...', 'info');
+                    
+                    const users = results['Utilisateurs'];
+                    const activeSubscriptions = results['Abonnements actifs'];
+                    
+                    let comparisonTable = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Utilisateur</th>
+                                    <th>Date de fin</th>
+                                    <th>Backend (jours)</th>
+                                    <th>Frontend corrigé</th>
+                                    <th>Frontend ancien</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    let issues = 0;
+                    let corrections = 0;
+
+                    users.forEach(user => {
+                        if (user.role !== 'ADMIN' && user.subscriptionEndDate) {
+                            const backendDays = user.daysUntilExpiration;
+                            const frontendNewDays = calculateDaysRemaining(user.subscriptionEndDate);
+                            const frontendOldDays = calculateDaysRemainingOld(user.subscriptionEndDate);
+                            
+                            let status = '';
+                            let statusClass = '';
+                            
+                            if (backendDays === frontendNewDays && backendDays !== frontendOldDays) {
+                                status = '✅ Corrigé';
+                                statusClass = 'match';
+                                corrections++;
+                            } else if (backendDays === frontendNewDays && backendDays === frontendOldDays) {
+                                status = 'ℹ️ Déjà correct';
+                                statusClass = 'match';
+                            } else if (backendDays !== frontendNewDays) {
+                                status = '❌ Incohérent';
+                                statusClass = 'mismatch';
+                                issues++;
+                            }
+
+                            comparisonTable += `
+                                <tr class="${statusClass}">
+                                    <td>${user.firstName} ${user.lastName}</td>
+                                    <td>${new Date(user.subscriptionEndDate).toLocaleDateString('fr-FR')}</td>
+                                    <td>${backendDays}</td>
+                                    <td>${frontendNewDays}</td>
+                                    <td>${frontendOldDays}</td>
+                                    <td>${status}</td>
+                                </tr>
+                            `;
+                        }
+                    });
+
+                    comparisonTable += '</tbody></table>';
+                    
+                    const resultsDiv = document.getElementById('results');
+                    const tableDiv = document.createElement('div');
+                    tableDiv.innerHTML = comparisonTable;
+                    resultsDiv.appendChild(tableDiv);
+
+                    // Résumé
+                    if (issues === 0 && corrections > 0) {
+                        displayResult(`✅ Vérification réussie ! ${corrections} corrections appliquées, aucune incohérence détectée.`, 'success');
+                    } else if (issues === 0) {
+                        displayResult('✅ Vérification réussie ! Toutes les données sont cohérentes.', 'success');
+                    } else {
+                        displayResult(`⚠️ ${issues} incohérences détectées. Vérifiez les corrections.`, 'warning');
+                    }
+                }
+
+                // Test 4: Vérifier la cohérence entre les sections
+                displayResult('🔍 Vérification de la cohérence entre sections...', 'info');
+                
+                if (results['Utilisateurs'] && results['Abonnements actifs']) {
+                    const users = results['Utilisateurs'];
+                    const activeSubscriptions = results['Abonnements actifs'];
+                    
+                    const userIds = users.map(u => u.id);
+                    const activeUserIds = activeSubscriptions.map(u => u.id);
+                    
+                    const activeInUsers = activeUserIds.every(id => userIds.includes(id));
+                    
+                    if (activeInUsers) {
+                        displayResult('✅ Cohérence entre les sections Utilisateurs et Abonnements', 'success');
+                    } else {
+                        displayResult('⚠️ Incohérence détectée entre les sections', 'warning');
+                    }
+                }
+
+            } catch (error) {
+                displayResult(`❌ Erreur lors de la vérification : ${error.message}`, 'error');
+            }
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            displayResult('📋 Page de vérification chargée. Cliquez sur "Lancer la vérification" pour commencer.', 'info');
+        };
+    </script>
+</body>
+</html>

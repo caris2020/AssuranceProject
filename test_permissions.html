@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Permissions Dossiers</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .case-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f9f9f9; }
+        .permission { background: #e3f2fd; padding: 5px; border-radius: 3px; font-family: monospace; font-weight: bold; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test des Permissions des Dossiers</h1>
+    
+    <div class="test-section info">
+        <h3>Instructions</h3>
+        <p>Ce test vérifie les permissions des dossiers et affiche les boutons Modifier/Supprimer selon les permissions.</p>
+    </div>
+
+    <div class="test-section">
+        <h3>Test des permissions backend</h3>
+        <button onclick="testBackendPermissions()">Vérifier les permissions backend</button>
+        <div id="permissions-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Simulation des cartes avec permissions</h3>
+        <button onclick="simulateCardsWithPermissions()">Simuler les cartes</button>
+        <div id="cards-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        const TEST_USER = 'admin'; // Utilisateur de test
+
+        async function testBackendPermissions() {
+            const resultDiv = document.getElementById('permissions-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                // Récupérer tous les dossiers
+                const casesResponse = await fetch(`${API_BASE}/api/cases`);
+                const cases = await casesResponse.json();
+                
+                let html = '<div class="success">';
+                html += `<h4>✅ Permissions backend pour l'utilisateur: ${TEST_USER}</h4>`;
+                html += `<p><strong>Nombre de dossiers:</strong> ${cases.length}</p>`;
+                
+                for (const caseItem of cases) {
+                    try {
+                        // Récupérer les permissions pour ce dossier
+                        const params = new URLSearchParams({ actorName: TEST_USER });
+                        const permissionsResponse = await fetch(`${API_BASE}/api/cases/${caseItem.id}/permissions?${params.toString()}`);
+                        const permissions = await permissionsResponse.json();
+                        
+                        html += `<div class="case-card">`;
+                        html += `<h4>Dossier: ${caseItem.reference}</h4>`;
+                        html += `<p><strong>ID:</strong> ${caseItem.id}</p>`;
+                        html += `<p><strong>Créé par:</strong> ${caseItem.createdBy}</p>`;
+                        html += `<p><strong>Utilisateur test:</strong> ${TEST_USER}</p>`;
+                        html += `<p><strong>canEdit:</strong> <span class="permission">${permissions.canEdit}</span></p>`;
+                        html += `<p><strong>canDelete:</strong> <span class="permission">${permissions.canDelete}</span></p>`;
+                        html += `<p><strong>Peut modifier:</strong> ${permissions.canEdit ? '✅ OUI' : '❌ NON'}</p>`;
+                        html += `<p><strong>Peut supprimer:</strong> ${permissions.canDelete ? '✅ OUI' : '❌ NON'}</p>`;
+                        html += `</div>`;
+                    } catch (error) {
+                        html += `<div class="case-card">`;
+                        html += `<h4>Dossier: ${caseItem.reference}</h4>`;
+                        html += `<p><strong>Erreur permissions:</strong> ${error.message}</p>`;
+                        html += `</div>`;
+                    }
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors du test des permissions</h4><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function simulateCardsWithPermissions() {
+            const resultDiv = document.getElementById('cards-result');
+            resultDiv.innerHTML = '<p>Chargement...</p>';
+            
+            try {
+                // Récupérer tous les dossiers
+                const casesResponse = await fetch(`${API_BASE}/api/cases`);
+                const cases = await casesResponse.json();
+                
+                let html = '<div class="success">';
+                html += '<h4>🎴 Simulation des cartes avec permissions</h4>';
+                html += '<p>Voici comment les cartes de dossier devraient s\'afficher avec les boutons selon les permissions :</p>';
+                
+                for (const caseItem of cases) {
+                    try {
+                        // Récupérer les permissions pour ce dossier
+                        const params = new URLSearchParams({ actorName: TEST_USER });
+                        const permissionsResponse = await fetch(`${API_BASE}/api/cases/${caseItem.id}/permissions?${params.toString()}`);
+                        const permissions = await permissionsResponse.json();
+                        
+                        // Parser les données JSON
+                        let caseData = {};
+                        try {
+                            caseData = JSON.parse(caseItem.dataJson || '{}');
+                        } catch (e) {
+                            caseData = {};
+                        }
+                        
+                        html += `<div class="case-card">`;
+                        html += `<div style="display: flex; justify-content: space-between; align-items: center;">`;
+                        html += `<div style="height: 40px; width: 40px; background: #f0f9ff; border-radius: 8px; display: flex; align-items: center; justify-content: center;">🔍</div>`;
+                        html += `</div>`;
+                        html += `<h3 style="margin-top: 12px; font-weight: 600;">${caseData.nature_sinistre || 'Dossier d\'enquête'}</h3>`;
+                        html += `<p style="font-size: 14px; color: #64748b;">Créé le ${new Date(caseItem.createdAt).toLocaleDateString('fr-FR')}</p>`;
+                        html += `<p style="font-size: 12px; color: #64748b;">Par: <span style="font-weight: 500;">${caseItem.createdBy}</span></p>`;
+                        html += `<p style="font-size: 12px; color: #64748b;">Code: <span style="font-family: monospace; background: #e3f2fd; padding: 2px 4px; border-radius: 3px;">${caseItem.reference}</span></p>`;
+                        
+                        // Afficher les personnes impliquées
+                        if (caseData.assures && Array.isArray(caseData.assures) && caseData.assures.length > 0) {
+                            const assure = caseData.assures[0];
+                            html += `<div style="margin-top: 16px; font-size: 14px;">`;
+                            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>👤 Assuré:</span><span style="font-weight: 500;">${assure.prenom} ${assure.nom}</span></div>`;
+                            html += `</div>`;
+                        }
+                        
+                        if (caseData.beneficiaires && Array.isArray(caseData.beneficiaires) && caseData.beneficiaires.length > 0) {
+                            const beneficiaire = caseData.beneficiaires[0];
+                            html += `<div style="margin-top: 8px; font-size: 14px;">`;
+                            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px;"><span>🎯 Bénéficiaire:</span><span style="font-weight: 500;">${beneficiaire.prenom} ${beneficiaire.nom}</span></div>`;
+                            html += `</div>`;
+                        }
+                        
+                        // Statut
+                        html += `<div style="margin-top: 12px;">`;
+                        const statusText = caseItem.status === 'SOUS_ENQUETE' ? 'Sous enquête' : 
+                                          caseItem.status === 'FRAUDULEUX' ? 'Frauduleux' : 'Preuve insuffisante';
+                        const statusColor = caseItem.status === 'SOUS_ENQUETE' ? '#dbeafe' : 
+                                           caseItem.status === 'FRAUDULEUX' ? '#fee2e2' : '#fed7aa';
+                        const textColor = caseItem.status === 'SOUS_ENQUETE' ? '#1e40af' : 
+                                         caseItem.status === 'FRAUDULEUX' ? '#dc2626' : '#ea580c';
+                        html += `<span style="background: ${statusColor}; color: ${textColor}; padding: 2px 8px; border-radius: 12px; font-size: 12px;">${statusText}</span>`;
+                        html += `</div>`;
+                        
+                        // Boutons d'action
+                        html += `<div style="margin-top: 16px; display: flex; flex-direction: column; gap: 8px;">`;
+                        html += `<button style="padding: 8px; border: none; border-radius: 6px; background: #3b82f6; color: white;">Voir le dossier</button>`;
+                        html += `<button style="padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; background: white;">📋 Voir rapport</button>`;
+                        
+                        // Bouton Supprimer (si autorisé)
+                        if (permissions.canDelete) {
+                            html += `<button style="padding: 8px; border: none; border-radius: 6px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca;">🗑️ Supprimer le dossier</button>`;
+                        } else {
+                            html += `<p style="font-size: 12px; color: #6b7280; text-align: center; padding: 8px;">❌ Pas autorisé à supprimer</p>`;
+                        }
+                        html += `</div>`;
+                        
+                        // Informations sur les permissions
+                        html += `<div style="margin-top: 12px; padding: 8px; background: #f3f4f6; border-radius: 4px; font-size: 12px;">`;
+                        html += `<p><strong>Permissions:</strong></p>`;
+                        html += `<p>• Modifier: ${permissions.canEdit ? '✅ Autorisé' : '❌ Non autorisé'}</p>`;
+                        html += `<p>• Supprimer: ${permissions.canDelete ? '✅ Autorisé' : '❌ Non autorisé'}</p>`;
+                        html += `</div>`;
+                        
+                        html += `</div>`;
+                    } catch (error) {
+                        html += `<div class="case-card">`;
+                        html += `<h4>Dossier: ${caseItem.reference}</h4>`;
+                        html += `<p><strong>Erreur:</strong> ${error.message}</p>`;
+                        html += `</div>`;
+                    }
+                }
+                
+                html += '</div>';
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Erreur lors de la simulation</h4><p>${error.message}</p></div>`;
+            }
+        }
+    </script>
+</body>
+</html>

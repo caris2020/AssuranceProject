@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Upload Fichiers Rapports</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Upload Fichiers Rapports</h1>
+        <p>Ce test vérifie que l'upload de fichiers fonctionne correctement lors de la création de rapports.</p>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="title">Titre du rapport *</label>
+                <input type="text" id="title" name="title" value="Test Rapport Upload" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="status">Statut</label>
+                <select id="status" name="status">
+                    <option value="DISPONIBLE">Disponible</option>
+                    <option value="EN_ATTENTE">En attente</option>
+                    <option value="TRAITE">Traité</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="beneficiary">Bénéficiaire</label>
+                <input type="text" id="beneficiary" name="beneficiary" value="Test Bénéficiaire">
+            </div>
+            
+            <div class="form-group">
+                <label for="initiator">Initiateur</label>
+                <input type="text" id="initiator" name="initiator" value="Service Test">
+            </div>
+            
+            <div class="form-group">
+                <label for="insured">Assuré</label>
+                <input type="text" id="insured" name="insured" value="Test Assuré">
+            </div>
+            
+            <div class="form-group">
+                <label for="subscriber">Souscripteur</label>
+                <input type="text" id="subscriber" name="subscriber" value="Test Souscripteur">
+            </div>
+            
+            <div class="form-group">
+                <label for="caseId">Numéro de dossier</label>
+                <input type="text" id="caseId" name="caseId" value="Z60TFMIXUS">
+            </div>
+            
+            <div class="form-group">
+                <label for="file">Fichier à uploader *</label>
+                <input type="file" id="file" name="file" accept=".pdf,.txt,.doc,.docx" required>
+                <small>Formats acceptés: PDF, TXT, DOC, DOCX (max 20MB)</small>
+            </div>
+            
+            <button type="submit" id="submitBtn">Créer le rapport avec fichier</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const resultDiv = document.getElementById('result');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Création en cours...';
+            
+            try {
+                // Récupérer les données du formulaire
+                const formData = new FormData();
+                const fileInput = document.getElementById('file');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    throw new Error('Aucun fichier sélectionné');
+                }
+                
+                // Créer d'abord le rapport
+                const reportData = {
+                    title: document.getElementById('title').value,
+                    status: document.getElementById('status').value,
+                    beneficiary: document.getElementById('beneficiary').value,
+                    initiator: document.getElementById('initiator').value,
+                    insured: document.getElementById('insured').value,
+                    subscriber: document.getElementById('subscriber').value,
+                    caseId: document.getElementById('caseId').value,
+                    beneficiaries: JSON.stringify([{
+                        nom: document.getElementById('beneficiary').value.split(' ')[0] || '',
+                        prenom: document.getElementById('beneficiary').value.split(' ')[1] || '',
+                        dateNaissance: ''
+                    }]),
+                    insureds: JSON.stringify([{
+                        nom: document.getElementById('insured').value.split(' ')[0] || '',
+                        prenom: document.getElementById('insured').value.split(' ')[1] || '',
+                        dateNaissance: ''
+                    }])
+                };
+                
+                console.log('Création du rapport avec données:', reportData);
+                
+                // Créer le rapport
+                const createResponse = await fetch(`${API_BASE}/api/reports?createdBy=test&hasFile=true`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(reportData)
+                });
+                
+                if (!createResponse.ok) {
+                    const errorData = await createResponse.json();
+                    throw new Error(`Erreur création rapport: ${errorData.error || createResponse.statusText}`);
+                }
+                
+                const createdReport = await createResponse.json();
+                console.log('Rapport créé:', createdReport);
+                
+                // Upload du fichier
+                const uploadFormData = new FormData();
+                uploadFormData.append('file', file);
+                uploadFormData.append('description', 'Fichier de test uploadé automatiquement');
+                uploadFormData.append('fileType', 'document');
+                
+                console.log('Upload du fichier:', file.name, 'Taille:', file.size);
+                
+                const uploadResponse = await fetch(`${API_BASE}/api/files/reports/${createdReport.id}/upload`, {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+                
+                if (!uploadResponse.ok) {
+                    const errorData = await uploadResponse.json();
+                    throw new Error(`Erreur upload fichier: ${errorData.message || uploadResponse.statusText}`);
+                }
+                
+                const uploadResult = await uploadResponse.json();
+                console.log('Fichier uploadé:', uploadResult);
+                
+                // Vérifier que le fichier est bien attaché
+                const filesResponse = await fetch(`${API_BASE}/api/files/reports/${createdReport.id}/files`);
+                if (!filesResponse.ok) {
+                    throw new Error('Erreur lors de la récupération des fichiers');
+                }
+                
+                const filesData = await filesResponse.json();
+                console.log('Fichiers du rapport:', filesData);
+                
+                // Afficher le résultat
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+✅ TEST RÉUSSI !
+
+📋 Rapport créé:
+- ID: ${createdReport.id}
+- Titre: ${createdReport.title}
+- Statut: ${createdReport.status}
+- Créé par: ${createdReport.createdBy}
+
+📎 Fichier uploadé:
+- Nom: ${uploadResult.file.fileName}
+- Taille: ${uploadResult.file.formattedSize}
+- Type: ${uploadResult.file.fileType}
+- ID: ${uploadResult.file.id}
+
+📊 Total fichiers attachés: ${filesData.totalCount}
+
+🔗 URLs de test:
+- Téléchargement: ${API_BASE}/api/files/reports/${createdReport.id}/files/${uploadResult.file.id}/download
+- Liste fichiers: ${API_BASE}/api/files/reports/${createdReport.id}/files
+                `;
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ ERREUR: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Créer le rapport avec fichier';
+            }
+        });
+        
+        // Test de connexion au démarrage
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                if (response.ok) {
+                    console.log('✅ Connexion au backend OK');
+                } else {
+                    console.warn('⚠️ Problème de connexion au backend');
+                }
+            } catch (error) {
+                console.error('❌ Impossible de se connecter au backend:', error);
+            }
+        });
+    </script>
+</body>
+</html>

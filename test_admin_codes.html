@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Codes Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background: white; }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .info { border-left: 4px solid #17a2b8; }
+        button { padding: 12px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 4px; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: black; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        input, select { padding: 10px; margin: 5px; width: 200px; border: 1px solid #ddd; border-radius: 4px; }
+        .result { margin-top: 15px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border-left: 4px solid #6c757d; }
+        .result.success { background-color: #d4edda; border-color: #28a745; }
+        .result.error { background-color: #f8d7da; border-color: #dc3545; }
+        .result.info { background-color: #d1ecf1; border-color: #17a2b8; }
+        .log { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; margin-top: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .code-display { font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Codes Admin</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Problème Identifié</h3>
+            <p>Les codes fournis depuis la page admin ne fonctionnaient pas car :</p>
+            <ul>
+                <li>❌ <strong>Avant :</strong> Génération basée sur un hash du titre du rapport</li>
+                <li>❌ <strong>Problème :</strong> Les IDs simulés ne correspondaient pas aux vrais IDs</li>
+                <li>✅ <strong>Solution :</strong> Utilisation des vrais IDs des rapports</li>
+                <li>✅ <strong>Résultat :</strong> Codes cohérents entre admin et téléchargement</li>
+            </ul>
+        </div>
+
+        <div class="comparison">
+            <!-- Test 1: Codes Admin -->
+            <div class="test-section">
+                <h3>🔐 Test 1: Codes depuis Admin</h3>
+                <p>Test de récupération des codes depuis la page admin</p>
+                
+                <label>ID du Rapport: <input type="number" id="adminReportId" value="1" min="1"></label><br>
+                <label>Utilisateur: <input type="text" id="adminUser" value="admin"></label><br>
+                
+                <button class="btn-primary" onclick="testAdminCodes()">Récupérer Codes Admin</button>
+                <button class="btn-success" onclick="testAdminValidation()">Tester Validation</button>
+                
+                <div id="adminCodesResult" class="result" style="display: none;"></div>
+                <div id="adminCodes" class="code-display" style="display: none;"></div>
+            </div>
+
+            <!-- Test 2: Codes Frontend -->
+            <div class="test-section">
+                <h3>📱 Test 2: Codes Frontend</h3>
+                <p>Test de génération des codes côté frontend</p>
+                
+                <label>ID du Rapport: <input type="number" id="frontendReportId" value="1" min="1"></label><br>
+                
+                <button class="btn-primary" onclick="testFrontendCodes()">Générer Codes Frontend</button>
+                <button class="btn-success" onclick="testFrontendValidation()">Tester Validation</button>
+                
+                <div id="frontendCodesResult" class="result" style="display: none;"></div>
+                <div id="frontendCodes" class="code-display" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Test 3: Comparaison -->
+        <div class="test-section">
+            <h3>🔍 Test 3: Comparaison des Codes</h3>
+            <p>Vérification de la cohérence entre admin et frontend</p>
+            
+            <button class="btn-warning" onclick="compareCodes()">Comparer les Codes</button>
+            <button class="btn-success" onclick="testCompleteFlow()">Test Flux Complet</button>
+            
+            <div id="comparisonResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 4: Validation et Téléchargement -->
+        <div class="test-section">
+            <h3>📥 Test 4: Validation et Téléchargement</h3>
+            <p>Test complet avec validation et téléchargement</p>
+            
+            <label>ID du Rapport: <input type="number" id="downloadReportId" value="1" min="1"></label><br>
+            <label>Code d'Accès: <input type="text" id="downloadCode" placeholder="Ex: CODE000001"></label><br>
+            <label>Utilisateur: <input type="text" id="downloadUser" value="testuser"></label><br>
+            
+            <button class="btn-primary" onclick="generateDownloadCode()">Générer Code</button>
+            <button class="btn-success" onclick="testDownloadValidation()">Valider Code</button>
+            <button class="btn-warning" onclick="testDownload()">Télécharger</button>
+            
+            <div id="downloadResult" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Log des actions -->
+        <div class="test-section">
+            <h3>📝 Log des Actions</h3>
+            <div id="actionLog" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let adminCodes = [];
+        let frontendCodes = [];
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('actionLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#6c757d';
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function testAdminCodes() {
+            const reportId = document.getElementById('adminReportId').value;
+            const user = document.getElementById('adminUser').value;
+            const resultDiv = document.getElementById('adminCodesResult');
+            const codesDiv = document.getElementById('adminCodes');
+            
+            try {
+                log(`Récupération des codes admin pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/files/${reportId}?requesterName=${encodeURIComponent(user)}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    adminCodes = data.map((file: any) => file.accessCode).filter(Boolean);
+                    
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Codes admin récupérés</h4>
+                        <p><strong>Nombre de codes:</strong> ${adminCodes.length}</p>
+                        <p><strong>Rapport ID:</strong> ${reportId}</p>
+                    `;
+                    
+                    codesDiv.style.display = 'block';
+                    codesDiv.innerHTML = `<strong>Codes Admin:</strong><br>${adminCodes.map(code => `<code>${code}</code>`).join('<br>')}`;
+                    
+                    log(`Codes admin récupérés: ${adminCodes.join(', ')}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${errorText}</p>`;
+                    log(`Erreur récupération codes admin: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors de la récupération des codes admin: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAdminValidation() {
+            if (adminCodes.length === 0) {
+                alert('Veuillez d\'abord récupérer les codes admin');
+                return;
+            }
+            
+            const reportId = document.getElementById('adminReportId').value;
+            const code = adminCodes[0]; // Prendre le premier code
+            
+            try {
+                log(`Validation du code admin ${code} pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: parseInt(reportId), code: code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.valid) {
+                    log(`✅ Code admin ${code} validé avec succès`, 'success');
+                } else {
+                    log(`❌ Code admin ${code} invalide`, 'error');
+                }
+            } catch (error) {
+                log(`Erreur lors de la validation du code admin: ${error.message}`, 'error');
+            }
+        }
+
+        function testFrontendCodes() {
+            const reportId = document.getElementById('frontendReportId').value;
+            const resultDiv = document.getElementById('frontendCodesResult');
+            const codesDiv = document.getElementById('frontendCodes');
+            
+            // Générer le code comme le fait le frontend
+            const code = `CODE${reportId.toString().padStart(6, '0')}`;
+            frontendCodes = [code];
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `
+                <h4>✅ Code frontend généré</h4>
+                <p><strong>Code généré:</strong> ${code}</p>
+                <p><strong>Rapport ID:</strong> ${reportId}</p>
+            `;
+            
+            codesDiv.style.display = 'block';
+            codesDiv.innerHTML = `<strong>Code Frontend:</strong><br><code>${code}</code>`;
+            
+            log(`Code frontend généré: ${code}`, 'success');
+        }
+
+        async function testFrontendValidation() {
+            if (frontendCodes.length === 0) {
+                alert('Veuillez d\'abord générer le code frontend');
+                return;
+            }
+            
+            const reportId = document.getElementById('frontendReportId').value;
+            const code = frontendCodes[0];
+            
+            try {
+                log(`Validation du code frontend ${code} pour le rapport ${reportId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: parseInt(reportId), code: code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.valid) {
+                    log(`✅ Code frontend ${code} validé avec succès`, 'success');
+                } else {
+                    log(`❌ Code frontend ${code} invalide`, 'error');
+                }
+            } catch (error) {
+                log(`Erreur lors de la validation du code frontend: ${error.message}`, 'error');
+            }
+        }
+
+        function compareCodes() {
+            const resultDiv = document.getElementById('comparisonResult');
+            
+            if (adminCodes.length === 0 || frontendCodes.length === 0) {
+                alert('Veuillez d\'abord récupérer les codes admin et générer les codes frontend');
+                return;
+            }
+            
+            const adminReportId = document.getElementById('adminReportId').value;
+            const frontendReportId = document.getElementById('frontendReportId').value;
+            
+            resultDiv.style.display = 'block';
+            
+            if (adminReportId === frontendReportId) {
+                // Même rapport, les codes devraient être identiques
+                const adminCode = adminCodes[0];
+                const frontendCode = frontendCodes[0];
+                
+                if (adminCode === frontendCode) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Codes identiques</h4>
+                        <p><strong>Code admin:</strong> ${adminCode}</p>
+                        <p><strong>Code frontend:</strong> ${frontendCode}</p>
+                        <p><strong>Rapport ID:</strong> ${adminReportId}</p>
+                        <p>🎉 Les codes sont cohérents !</p>
+                    `;
+                    log('✅ Codes admin et frontend identiques', 'success');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Codes différents</h4>
+                        <p><strong>Code admin:</strong> ${adminCode}</p>
+                        <p><strong>Code frontend:</strong> ${frontendCode}</p>
+                        <p><strong>Rapport ID:</strong> ${adminReportId}</p>
+                        <p>⚠️ Les codes ne correspondent pas !</p>
+                    `;
+                    log('❌ Codes admin et frontend différents', 'error');
+                }
+            } else {
+                resultDiv.className = 'result info';
+                resultDiv.innerHTML = `
+                    <h4>ℹ️ Rapports différents</h4>
+                    <p><strong>Rapport admin:</strong> ${adminReportId}</p>
+                    <p><strong>Rapport frontend:</strong> ${frontendReportId}</p>
+                    <p>Les codes ne peuvent pas être comparés car les rapports sont différents.</p>
+                `;
+                log('ℹ️ Rapports différents, comparaison impossible', 'info');
+            }
+        }
+
+        async function testCompleteFlow() {
+            log('🧪 Début du test de flux complet...', 'info');
+            
+            // Test 1: Récupérer les codes admin
+            await testAdminCodes();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Test 2: Générer les codes frontend
+            testFrontendCodes();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Test 3: Comparer les codes
+            compareCodes();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Test 4: Valider les codes
+            await testAdminValidation();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testFrontendValidation();
+            
+            log('🧪 Test de flux complet terminé', 'info');
+        }
+
+        function generateDownloadCode() {
+            const reportId = document.getElementById('downloadReportId').value;
+            const code = `CODE${reportId.toString().padStart(6, '0')}`;
+            document.getElementById('downloadCode').value = code;
+            log(`Code de téléchargement généré: ${code}`, 'success');
+        }
+
+        async function testDownloadValidation() {
+            const reportId = document.getElementById('downloadReportId').value;
+            const code = document.getElementById('downloadCode').value;
+            const resultDiv = document.getElementById('downloadResult');
+            
+            try {
+                log(`Validation du code de téléchargement ${code}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/validate-code`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reportId: parseInt(reportId), code: code })
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.style.display = 'block';
+                
+                if (data.valid) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Code de téléchargement valide</h4>
+                        <p><strong>Code:</strong> ${code}</p>
+                        <p><strong>Rapport ID:</strong> ${reportId}</p>
+                        <p>Le téléchargement peut maintenant être effectué.</p>
+                    `;
+                    log(`✅ Code de téléchargement ${code} validé`, 'success');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Code de téléchargement invalide</h4>
+                        <p><strong>Code fourni:</strong> ${code}</p>
+                        <p><strong>Code attendu:</strong> ${data.expectedCode}</p>
+                        <p><strong>Erreur:</strong> ${data.error || 'Code invalide'}</p>
+                    `;
+                    log(`❌ Code de téléchargement ${code} invalide`, 'error');
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors de la validation: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDownload() {
+            const reportId = document.getElementById('downloadReportId').value;
+            const code = document.getElementById('downloadCode').value;
+            const user = document.getElementById('downloadUser').value;
+            const resultDiv = document.getElementById('downloadResult');
+            
+            try {
+                log(`Tentative de téléchargement avec le code ${code}...`);
+                
+                const response = await fetch(`${API_BASE}/api/download/${reportId}?requesterName=${encodeURIComponent(user)}&code=${encodeURIComponent(code)}`);
+                
+                if (response.ok) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>✅ Téléchargement réussi</h4>
+                        <p><strong>Code utilisé:</strong> ${code}</p>
+                        <p><strong>Rapport ID:</strong> ${reportId}</p>
+                        <p>Le fichier devrait se télécharger automatiquement.</p>
+                    `;
+                    log('✅ Téléchargement réussi', 'success');
+                    
+                    // Déclencher le téléchargement
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rapport_${reportId}.bin`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h4>❌ Téléchargement échoué</h4>
+                        <p><strong>Status:</strong> ${response.status}</p>
+                        <p><strong>Erreur:</strong> ${errorText}</p>
+                    `;
+                    log(`Téléchargement échoué: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<h4>❌ Erreur</h4><p>${error.message}</p>`;
+                log(`Erreur lors du téléchargement: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialisation
+        window.onload = function() {
+            log('🧪 Système de test des codes admin initialisé', 'info');
+            generateDownloadCode(); // Générer un code par défaut
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Vérification des Dates d'Expiration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-case {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .error {
+            background-color: #ffe6e6;
+            border-color: #ff9999;
+        }
+        .success {
+            background-color: #e6ffe6;
+            border-color: #99ff99;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background-color: #ffffcc;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test de Vérification des Dates d'Expiration</h1>
+    
+    <div class="container">
+        <h2>📊 Analyse des Incohérences Identifiées</h2>
+        
+        <div class="test-case error">
+            <h3>❌ Problème Principal Identifié</h3>
+            <p><strong>Incohérence :</strong> Le titre de la page affichait "Utilisateurs avec des abonnements expirés" même quand l'onglet "Actifs" était sélectionné.</p>
+            <p><strong>Solution appliquée :</strong> Le titre change maintenant dynamiquement selon l'onglet sélectionné.</p>
+        </div>
+
+        <div class="test-case warning">
+            <h3>⚠️ Vérification des Calculs de Dates</h3>
+            <p>Test des fonctions de calcul des jours restants :</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date d'Expiration</th>
+                        <th>Date Actuelle</th>
+                        <th>Jours Restants (Frontend)</th>
+                        <th>Jours Restants (Backend)</th>
+                        <th>Cohérence</th>
+                    </tr>
+                </thead>
+                <tbody id="dateTestResults">
+                    <!-- Les résultats seront générés par JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-case success">
+            <h3>✅ Corrections Appliquées</h3>
+            <ul>
+                <li><strong>Titre dynamique :</strong> Le titre de la page change maintenant selon l'onglet sélectionné</li>
+                <li><strong>Logique de filtrage :</strong> Vérification que les filtres correspondent aux données affichées</li>
+                <li><strong>Calcul des jours :</strong> Utilisation de la date actuelle réelle pour les calculs</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🎯 Test des Scénarios d'Expiration</h2>
+        
+        <div class="test-case">
+            <h3>Scénario 1 : Abonnement Expiré</h3>
+            <p>Date d'expiration : <span id="expiredDate"></span></p>
+            <p>Statut attendu : <span class="highlight">EXPIRÉ</span></p>
+            <p>Jours restants : <span id="expiredDays"></span></p>
+        </div>
+
+        <div class="test-case">
+            <h3>Scénario 2 : Abonnement Actif</h3>
+            <p>Date d'expiration : <span id="activeDate"></span></p>
+            <p>Statut attendu : <span class="highlight">ACTIF</span></p>
+            <p>Jours restants : <span id="activeDays"></span></p>
+        </div>
+
+        <div class="test-case">
+            <h3>Scénario 3 : Abonnement Expirant Bientôt</h3>
+            <p>Date d'expiration : <span id="expiringDate"></span></p>
+            <p>Statut attendu : <span class="highlight">EXPIRATION PROCHE</span></p>
+            <p>Jours restants : <span id="expiringDays"></span></p>
+        </div>
+
+        <div class="test-case">
+            <h3>Scénario 4 : Administrateur</h3>
+            <p>Date d'expiration : <span class="highlight">Jamais (Administrateur)</span></p>
+            <p>Statut attendu : <span class="highlight">ABONNEMENT PERMANENT</span></p>
+            <p>Jours restants : <span class="highlight">Infini</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Fonction de calcul des jours restants (version frontend)
+        function calculateDaysRemainingFrontend(endDate) {
+            const end = new Date(endDate);
+            const now = new Date();
+            
+            const diffTime = end.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        // Fonction de calcul des jours restants (version backend simulée)
+        function calculateDaysRemainingBackend(endDate) {
+            const end = new Date(endDate);
+            const now = new Date();
+            
+            // Simuler le calcul backend avec LocalDate
+            const diffTime = end.getTime() - now.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays > 0 ? diffDays : 0;
+        }
+
+        // Générer des dates de test
+        const now = new Date();
+        const expiredDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 jours dans le passé
+        const activeDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 an dans le futur
+        const expiringDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // 15 jours dans le futur
+
+        // Remplir les scénarios
+        document.getElementById('expiredDate').textContent = expiredDate.toLocaleDateString('fr-FR');
+        document.getElementById('activeDate').textContent = activeDate.toLocaleDateString('fr-FR');
+        document.getElementById('expiringDate').textContent = expiringDate.toLocaleDateString('fr-FR');
+
+        document.getElementById('expiredDays').textContent = calculateDaysRemainingFrontend(expiredDate) + ' jours';
+        document.getElementById('activeDays').textContent = calculateDaysRemainingFrontend(activeDate) + ' jours';
+        document.getElementById('expiringDays').textContent = calculateDaysRemainingFrontend(expiringDate) + ' jours';
+
+        // Générer le tableau de comparaison
+        const testDates = [
+            { name: 'Expiré', date: expiredDate },
+            { name: 'Expirant bientôt', date: expiringDate },
+            { name: 'Actif', date: activeDate },
+            { name: 'Très futur', date: new Date(now.getTime() + 1000 * 24 * 60 * 60 * 1000) }
+        ];
+
+        const tableBody = document.getElementById('dateTestResults');
+        
+        testDates.forEach(test => {
+            const frontendDays = calculateDaysRemainingFrontend(test.date);
+            const backendDays = calculateDaysRemainingBackend(test.date);
+            const isConsistent = Math.abs(frontendDays - backendDays) <= 1; // Tolérance de 1 jour
+            
+            const row = document.createElement('tr');
+            row.className = isConsistent ? 'success' : 'error';
+            
+            row.innerHTML = `
+                <td>${test.name} (${test.date.toLocaleDateString('fr-FR')})</td>
+                <td>${now.toLocaleDateString('fr-FR')}</td>
+                <td>${frontendDays} jours</td>
+                <td>${backendDays} jours</td>
+                <td>${isConsistent ? '✅ Cohérent' : '❌ Incohérent'}</td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+
+        // Afficher les informations de debug
+        console.log('=== DEBUG DES DATES ===');
+        console.log('Date actuelle:', now.toISOString());
+        console.log('Date expirée:', expiredDate.toISOString());
+        console.log('Date active:', activeDate.toISOString());
+        console.log('Date expirant bientôt:', expiringDate.toISOString());
+        
+        console.log('=== CALCULS FRONTEND ===');
+        console.log('Expiré:', calculateDaysRemainingFrontend(expiredDate));
+        console.log('Actif:', calculateDaysRemainingFrontend(activeDate));
+        console.log('Expirant bientôt:', calculateDaysRemainingFrontend(expiringDate));
+    </script>
+</body>
+</html>

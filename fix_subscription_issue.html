@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correction Immédiate - Incohérence Abonnements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #dc3545;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .button:hover {
+            background-color: #c82333;
+        }
+        .success {
+            background-color: #28a745;
+        }
+        .success:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success-result {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correction Immédiate - Incohérence Abonnements</h1>
+        <p><strong>Problème identifié :</strong> Les utilisateurs ont des dates d'expiration futures (2026) mais le statut affiché est "Expiré".</p>
+        
+        <div>
+            <button class="button" onclick="fixIssue()">🔧 CORRIGER IMMÉDIATEMENT</button>
+            <button class="button success" onclick="checkStatus()">🔍 Vérifier le Statut</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        
+        async function fixIssue() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">Correction en cours...</div>';
+            
+            try {
+                // Étape 1: Corriger les dates et statuts
+                const fixResponse = await fetch(`${API_BASE}/subscriptions/fix-dates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const fixData = await fixResponse.json();
+                
+                if (fixData.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success-result">
+                            <h3>✅ Correction réussie !</h3>
+                            <p><strong>${fixData.message}</strong></p>
+                            <p>Utilisateurs corrigés: ${fixData.correctedCount}</p>
+                            <p><strong>Action requise :</strong> Actualisez la page du tableau de bord administrateur pour voir les changements.</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ Erreur lors de la correction</h3>
+                            <p>${fixData.message}</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Erreur de connexion</h3>
+                        <p>Assurez-vous que le backend est démarré sur http://localhost:8080</p>
+                        <p>Erreur: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        async function checkStatus() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">Vérification en cours...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/debug-dates`);
+                const data = await response.json();
+                
+                let inconsistentCount = 0;
+                data.users.forEach(user => {
+                    if (user.isInconsistent) {
+                        inconsistentCount++;
+                    }
+                });
+                
+                if (inconsistentCount === 0) {
+                    resultDiv.innerHTML = `
+                        <div class="result success-result">
+                            <h3>✅ Aucune incohérence détectée</h3>
+                            <p>Tous les abonnements sont cohérents.</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>⚠️ Incohérences détectées</h3>
+                            <p>${inconsistentCount} utilisateurs ont des incohérences dans leurs abonnements.</p>
+                            <p>Cliquez sur "CORRIGER IMMÉDIATEMENT" pour résoudre le problème.</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Erreur de vérification</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Vérifier automatiquement au chargement
+        window.onload = function() {
+            checkStatus();
+        };
+    </script>
+</body>
+</html>
